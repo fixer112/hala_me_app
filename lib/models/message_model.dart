@@ -18,8 +18,8 @@ class Message {
   final String uid;
 
   Message({
-    this.read = false,
-    this.delivered = false,
+    required this.read,
+    required this.delivered,
     required this.id,
     required this.sender,
     required this.chat,

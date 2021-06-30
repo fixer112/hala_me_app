@@ -3,18 +3,23 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/chat_repository.dart';
+import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:laravel_echo/src/channel/private-channel.dart';
 
+// ignore: must_be_immutable
 class ChatScreen extends StatefulWidget {
-  final Chat chat;
+  Chat chat;
 
   ChatScreen({required this.chat});
 
@@ -27,13 +32,20 @@ class _ChatScreenState extends State<ChatScreen> {
   User? currentUser;
   User? user;
   int? prevUserId;
-  int i = 0;
+  Timer? timer;
+  Timer? t1;
+  Timer? t2;
+  static AudioCache player = AudioCache(prefix: 'assets/sounds/');
+
+  UserProvider provider = Get.find();
 
   DateTime? prevDate;
 
   TextEditingController? controller = TextEditingController();
 
   bool loading = false;
+
+  PrivateChannel? channel;
 
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
     //print(message.delivered);
@@ -248,11 +260,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 : () async {
                     //print(controller!.text);
                     if (controller!.text.isNotEmpty) {
-                      //return print(json.encode(currentUser));
-                      // var pref = await getPref();
-                      // var u = (HashMap<String, dynamic>.from(
-                      //     jsonDecode(pref.getString('currentUser') as String)));
-                      //return print((u.runtimeType));
                       var m = Message(
                         read: false,
                         delivered: false,
@@ -264,19 +271,36 @@ class _ChatScreenState extends State<ChatScreen> {
                         sender: currentUser!,
                         uid: Uuid().v4(),
                       );
-                      currentUser?.chats
-                          ?.firstWhere((c) => c?.id == chat.id,
-                              orElse: () => null as Chat)
-                          ?.messages
-                          ?.add(m);
+                      var c = currentUser?.chats?.firstWhere(
+                          (c) => c?.id == chat.id,
+                          orElse: () => null as Chat);
+
+                      currentUser?.chats?.removeWhere((c) => c?.id == chat.id);
+                      c?.messages = List.from(c.messages as List<Message>)
+                        ..add(m);
+                      currentUser?.chats =
+                          List.from(currentUser?.chats as List<Chat>)..add(c);
+                      provider.setCurrentUser(currentUser!, save: false);
+
+                      controller!.text = "";
 
                       loading = true;
                       setState(() {});
-                      if (user != null) {
-                        await ChatRepository.saveMessage(user!.id, m, context);
-                      }
+                      //if (user != null) {
+                      Message? message = await ChatRepository.saveMessage(
+                          user!.id, m, provider);
+
                       loading = false;
                       setState(() {});
+
+                      if (message != null) {
+                        chat.messages
+                            ?.removeWhere((value) => value?.uid == message.uid);
+                        chat.messages?.add(message);
+                        player.play('message_sent.wav', volume: 0.5);
+                        //p.release();
+                      }
+                      // }
 
                       //User u = currentUser!;
 
@@ -290,10 +314,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       //     jsonDecode(pref.getString('currentUser') as String))));
                       //return print(jsonEncode(currentUser));
 
-                      Provider.of<UserProvider>(context, listen: false)
-                          .setCurrentUser(currentUser, save: false);
-                      setState(() {});
-                      controller!.text = "";
                     }
                   },
           ),
@@ -304,23 +324,93 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    getUser();
-    resendDummy(widget.chat, context);
+    currentChatPage = widget.chat.id;
+    //print(currentChatPage);
 
+    //print(globalEcho?.connector);
+    whisperType();
+    getUser().then((value) {
+      /* globalEcho
+          ?.private('chat.${widget.chat.id.toString()}')
+          .whisper('typing', {
+        'user_id': user!.id,
+        'typing': true,
+      }); */
+      //whisperType();
+      // PrivateChannel channel = initPusher(value)
+      /* globalEcho!
+          .private('chat.${widget.chat.id.toString()}')
+          .whisper('typing', () {}); */
+      ChatRepository.getMessages(widget.chat, provider)?.then((chat) {
+        if (chat != null) {
+          //widget.chat = chat;
+          //setState(() {});
+        }
+      });
+    });
+
+    //print(channel.options);
+
+    //listenType(channel);
+
+    resend();
     super.initState();
+    timer = Timer.periodic(new Duration(seconds: 10), (timer) => resend());
   }
 
-  getUser() async {
-    currentUser =
-        await Provider.of<UserProvider>(context, listen: false).currentUser();
-    user = widget.chat.users?.firstWhere((user) => user?.id != currentUser?.id)
-        as User;
+  @override
+  void dispose() {
+    timer?.cancel();
+    t1?.cancel();
+    super.dispose();
+  }
+
+  whisperType() async {
+    //print('whisper');
+    controller!.addListener(() async {
+      //print(controller?.text);
+
+      t1 = Timer(const Duration(seconds: 2), () async {
+        /* channel?.whisper('typing', {
+        'user_id': user!.id,
+        'typing': true,
+        }); */
+        await ChatRepository.typing(widget.chat, provider);
+        //var c = initPusher(us!)
+        //var channel = globalEcho!.private('chat.${widget.chat.id.toString()}');
+        // var channel = echos[currentChatPage];
+        // //print('channel: ${channel.}');
+        // //channel.subscribed(() {
+        // print('working');
+        // channel?.whisper('typing', {
+        //   'user_id': user!.id,
+        //   'typing': true,
+        //   // });
+        // });
+      });
+    });
+  }
+
+  resend() {
+    //if (!mounted) return;
+    //print("test");
+    resendDummy(widget.chat, provider).then((chat) => widget.chat == chat);
+  }
+
+  Future<User> getUser() async {
+    /* currentUser =
+        await Provider.of<UserProvider>(context, listen: false).currentUser(); */
+    var us = await provider.currentUser();
+    //await context.read<UserProvider>().currentUser();
+    user = widget.chat.users?.firstWhere((u) => u?.id != us?.id) as User;
     prevUserId = user?.id;
 
-    ChatRepository.getMessages(user!.id, context);
+    setState(() {});
+
+    return user!;
 
     //await listenOnline(user!.id, currentUser!, context);
-    setState(() {});
+    //setState(() {});
   }
 
   @override
@@ -368,23 +458,42 @@ class _ChatScreenState extends State<ChatScreen> {
                     Navigator.pop(context);
                   }),
             ),
-            body: Consumer<UserProvider>(builder: (context, model, child) {
-              model.currentUser().then((value) => currentUser = value);
+            body:
+                /* GetBuilder<UserProvider>(
+                //init: UserProvider(),
+                builder: (_) {
+                  return */
+                GetBuilder<UserProvider>(
+                    //init: UserProvider(),
+                    builder: (_) {
+              return FutureBuilder<User?>(
+                  future: provider.currentUser(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return loader();
+                    }
 
-              List<Message> messages = widget.chat.messages as List<Message>;
+                    currentUser = snapshot.data;
+                    widget.chat = currentUser?.chats
+                            ?.firstWhere((chat) => chat?.id == widget.chat.id)
+                        as Chat;
+                    // });
 
-              messages.sort((a, b) => b.created_at.compareTo(a.created_at));
-              //Message? firstMessage = messages.last;
-              // Where((message) => isSameDate(message.created_at, DateTime.now()),
-              //     orElse: () => null as Message);
-              prevDate = messages.isNotEmpty
-                  ? messages.first.created_at
-                  : DateTime.now();
-              return currentUser == null
-                  ? Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  : Column(
+                    user = widget.chat.users
+                        ?.firstWhere((u) => u?.id != currentUser?.id) as User;
+                    prevUserId = user?.id;
+
+                    List<Message> messages =
+                        widget.chat.messages as List<Message>;
+
+                    messages
+                        .sort((a, b) => b.created_at.compareTo(a.created_at));
+
+                    prevDate = messages.isNotEmpty
+                        ? messages.first.created_at
+                        : DateTime.now();
+
+                    return Column(
                       children: <Widget>[
                         Expanded(
                           child: ListView.builder(
@@ -417,7 +526,6 @@ class _ChatScreenState extends State<ChatScreen> {
                               // bool sameDate =
                               //     isSameDate(prevDate, message.created_at);
                               prevDate = message.created_at;
-                              i = index;
 
                               //setState(() {});
 
@@ -453,7 +561,11 @@ class _ChatScreenState extends State<ChatScreen> {
                         _sendMessageArea(),
                       ],
                     );
+                    //}),
+                  });
             }),
           );
+
+    // },),);
   }
 }

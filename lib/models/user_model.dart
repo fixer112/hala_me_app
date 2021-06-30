@@ -13,7 +13,7 @@ class User {
   final String email;
   final String username;
   final String? imageUrl;
-  final List<Chat?>? chats;
+  List<Chat?>? chats;
   final DateTime created_at;
   DateTime updated_at;
   String? access_token;

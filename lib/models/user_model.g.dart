@@ -8,13 +8,13 @@ part of 'user_model.dart';
 
 User _$UserFromJson(Map<String, dynamic> json) {
   return User(
-    online: json['online'] == 1 ? true : false,
+    online: json['online'].toString() == '1' ? true : false,
     id: json['id'] as int,
     phone_number: json['phone_number'] as String,
-    email: json['email'] == null ? '' : json['email'] as String,
-    username: json['username'] == null ? '' : json['username'] as String,
-    name: json['name'] == null ? '' : json['name'] as String,
-    imageUrl: json['imageUrl'] == null ? '' : json['imageUrl'] as String,
+    email: json['email'] as String,
+    username: json['username'] as String,
+    name: json['name'] as String,
+    imageUrl: json['imageUrl'] as String,
     chats: (json['chats'] as List)
         ?.map(
             (e) => e == null ? null : Chat.fromJson(e as Map<String, dynamic>))

@@ -8,14 +8,14 @@ part of 'message_model.dart';
 
 Message _$MessageFromJson(Map<String, dynamic> json) {
   return Message(
-    read: json['read'] == 1 ? true : false,
-    delivered: json['delivered'] == 1 ? true : false,
+    read: json['read'].toString() == '1' ? true : false,
+    delivered: json['delivered'].toString() == '1' ? true : false,
     id: json['id'] as int,
     sender: User.fromJson(json['sender'] as Map<String, dynamic>),
     chat: Chat.fromJson(json['chat'] as Map<String, dynamic>),
     created_at: DateTime.parse(json['created_at'] as String),
     body: json['body'] as String,
-    dummy: json['dummy'] == 1 ? true : false,
+    dummy: json['dummy'] as bool,
     uid: json['uid'] as String,
   );
 }

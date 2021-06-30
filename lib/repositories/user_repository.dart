@@ -15,11 +15,12 @@ import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/screens/chat_screen.dart';
 import 'package:hala_me/screens/home_screen.dart';
 import 'package:hala_me/screens/login_screen.dart';
+import 'package:hala_me/values.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class UserRepository {
-  static Future<void> login(String number, BuildContext context) async {
+  static Future<void> login(String number) async {
     //String number = "";
 
     /* if (Platform.isIOS) {
@@ -28,22 +29,25 @@ class UserRepository {
       number = "2348106813749";
     } */
     print(number);
-    var res = await http.post(Uri.parse("${AppConfig.BASE_URL}/auth/login"),
-        headers: {'Accept': 'application/json'},
-        body: {'phone_number': number});
+    var res = await http
+        .post(Uri.parse("${AppConfig.BASE_URL}/auth/login"), headers: {
+      'Accept': 'application/json',
+      //'X-Socket-ID': currentSocketId,
+    }, body: {
+      'phone_number': number
+    });
     //print(res.body);
     if (res.statusCode != 200) {
       return Get.snackbar("", "invalid number");
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
     //print(res.request);
-    //print(map['chats']);
-    //print(map['chats'][0]['messages']);
+    //print(map);
 
     User currentUser = User.fromJson(map);
+    //print(currentUser.chats?[1]?.messages);
 
-    Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser);
+    Get.put(UserProvider()).setCurrentUser(currentUser);
     //print(currentUser.chats?[0]?.messages?[0]?.body);
     Get.to(HomeScreen(
       first: true,
@@ -51,12 +55,15 @@ class UserRepository {
     //return currentUser;
   }
 
-  static Future<User> fetchUser(BuildContext context) async {
-    User? user =
-        await Provider.of<UserProvider>(context, listen: false).currentUser();
+  static Future<User> fetchUser(UserProvider provider) async {
+    //UserProvider provider = Get.find();
+    User? user = await provider.currentUser();
+    //await Provider.of<UserProvider>(context, listen: false).currentUser();
 
+    //print(user?.access_token);
+    //return null as User;
     if (user?.access_token == null) {
-      Get.to(LoginScreen());
+      Get.off(LoginScreen());
     }
     //print(number);
 
@@ -66,19 +73,23 @@ class UserRepository {
       Uri.parse("${AppConfig.BASE_URL}/user"),
       headers: {
         'Accept': 'application/json',
-        'Authorization': 'Bearer ${user?.access_token}'
+        'Authorization': 'Bearer ${user?.access_token}',
+        //'X-Socket-ID': currentSocketId,
       },
     );
 
+    //print(access_token);
+    print(res.statusCode);
     //print(res.body);
 
-    if (res.statusCode != 200) {
-      Get.to(LoginScreen());
+    if (![200, 201].contains(res.statusCode)) {
+      Get.off(LoginScreen());
       return null as User;
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
 
     User currentUser = User.fromJson(map);
+    //print(currentUser.chats?.first?.messages?.first?.read);
 
     currentUser.access_token = access_token;
 
@@ -106,39 +117,45 @@ class UserRepository {
 
         if (con == null) {
           c?.messages?.add(m);
-          currentUser.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
-          currentUser.chats?.add(c);
+          currentUser.chats?.removeWhere((chat) => m.chat.id == chat?.id);
+          currentUser.chats = List.from(currentUser.chats as List<Chat>)
+            ..add(c);
         }
       });
     }
 
     //print('login ${currentUser.}');
-    Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser);
+    provider.setCurrentUser(currentUser);
+    //context.read<UserProvider>().setCurrentUser(currentUser);
+
     return currentUser;
   }
 
-  static Future setOnlineStatus(BuildContext context, {int status = 1}) async {
-    User? user =
-        await Provider.of<UserProvider>(context, listen: false).currentUser();
+  static Future setOnlineStatus(UserProvider provider, {int status = 1}) async {
+    //return;
+    //UserProvider provider = Get.find();
+    User? user = await provider.currentUser();
 
     if (user?.access_token != null) {
       var res = await http
           .put(Uri.parse("${AppConfig.BASE_URL}/set_online"), headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer ${user?.access_token}',
+        //'X-Socket-ID': currentSocketId,
       }, body: {
-        'status': status
+        'status': status.toString()
       });
 
-      var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
+      //var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
 
-      User currentUser = User.fromJson(map);
+      //User currentUser = User.fromJson(map);
       //print('login ${currentUser.}');
 
-      Provider.of<UserProvider>(context, listen: false)
-          .setCurrentUser(currentUser);
-      return currentUser;
+      // provider.setCurrentUser(currentUser);
+
+      /* Provider.of<UserProvider>(context, listen: false)
+          .setCurrentUser(currentUser); */
+      //return currentUser;
     }
   }
 }

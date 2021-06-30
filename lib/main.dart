@@ -1,6 +1,7 @@
 // @dart=2.9
 import 'dart:io';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -18,11 +19,32 @@ void _enablePlatformOverrideForDesktop() {
 
 void main() {
   _enablePlatformOverrideForDesktop();
+  AwesomeNotifications().initialize(
+      // set the icon to null if you want to use the default app icon
+      //'resource://drawable/res_app_icon',
+      null,
+      [
+        NotificationChannel(
+            channelKey: 'message_recieved',
+            channelName: 'Message Recieved',
+            channelDescription: 'Notification for recieved messages.',
+            defaultColor: Color(0xFF9D50DD),
+            ledColor: Colors.white)
+      ]);
+  AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+    if (!isAllowed) {
+      // Insert here your friendly dialog box before call the request method
+      // This is very important to not harm the user experience
+      AwesomeNotifications().requestPermissionToSendNotifications();
+    }
+  });
+
   runApp(
-    MultiProvider(providers: [
+    MyApp(),
+    /* MultiProvider(providers: [
       ChangeNotifierProvider(create: (_) => UserProvider()),
       //ChangeNotifierProvider(create: (_) => ChatProvider()),
-    ], child: MyApp()),
+    ], child: MyApp()), */
   );
 }
 

@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:audioplayers/audioplayers.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pusher_client/flutter_pusher.dart';
+import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
@@ -12,11 +17,14 @@ import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/repositories/user_repository.dart';
+import 'package:hala_me/values.dart';
 import 'package:intl/intl.dart';
 import 'package:laravel_echo/laravel_echo.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:laravel_echo/src/channel/private-channel.dart';
+import 'package:flutter_pusher_client/flutter_pusher.dart';
 
 Future<SharedPreferences> getPref() async {
   SharedPreferences _prefs = await SharedPreferences.getInstance();
@@ -44,8 +52,11 @@ String chatDate(DateTime date) {
 }
 
 Widget loader() {
-  return Center(
-    child: CircularProgressIndicator(),
+  return Container(
+    color: Colors.white,
+    child: Center(
+      child: CircularProgressIndicator(),
+    ),
   );
 }
 
@@ -119,11 +130,15 @@ Echo initPusher(User currentUser) {
     //if (pusher != null) {
     if (state.currentState == 'CONNECTED') {
       final String socketId = pusher.getSocketId();
+      currentSocketId = socketId;
       print('pusher socket id: $socketId');
     }
 
     if (state.currentState == 'DISCONNECTED') {
-      pusher.connect();
+      ConnectivityResult result = await Connectivity().checkConnectivity();
+      if (result != ConnectivityResult.none) {
+        pusher.connect();
+      }
     }
     //}
   });
@@ -147,7 +162,7 @@ Echo initPusher(User currentUser) {
       }
     }
   });
-
+  //print("socket ${echo.sockedId()}");
   //echo.connect();
 
   return echo;
@@ -156,27 +171,92 @@ Echo initPusher(User currentUser) {
   //socket.on('disconnect', (_) => print('disconnect'));
 }
 
-Future<void> listenChat(
-    Echo echo, int id, User currentUser, BuildContext context) async {
+Future listenChat(
+    Echo echo, int id, UserProvider provider, BuildContext context) async {
   //echo.socket.on();
+  //UserProvider provider = Get.find();
+  AudioCache player = AudioCache(prefix: 'assets/sounds/');
 
-  echo.private('chat.${id.toString()}').listen('MessageCreated',
-      (Map<String, dynamic> message) {
+  User? currentUser = await provider.currentUser();
+  //await context.read<UserProvider>().currentUser();
+  PrivateChannel channel = echo.private('chat.${id.toString()}');
+
+  // echos[id] = channel;
+  // print("channel all : ${echos}");
+  /* .whisper('typing', {
+    'user_id': currentUser?.id,
+    'typing': true,
+    // });
+  }) */
+
+  channel.listen('MessageCreated', (Map<String, dynamic> message) {
     var map = HashMap.from(message);
+    // Map<String, String> mC =
+    //     map.map((key, value) => MapEntry(key.toString(), value.toString()));
     //print('working');
-    print(map['message']);
-    currentUser.chats
+    //print(map['message']);
+    var m = Message.fromJson(map['message']);
+    var chat = currentUser?.chats
+        ?.firstWhere((chat) => chat?.id == map['message']['chat']['id']);
+    currentUser?.chats
         ?.firstWhere((chat) => chat?.id == map['message']['chat']['id'])
         ?.messages
-        ?.add(Message.fromJson(map['message']));
-    Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser);
-    print("body ${currentUser.chats?[0]?.messages?.last?.read}");
+        ?.add(m);
+    int read = 0;
+    if (currentChatPage == id) {
+      read = 1;
+      if (m.sender.id != currentUser?.id) {
+        player.play('message_recieved.mp3', volume: 0.5);
+      }
+    } else {
+      if (m.sender.id != currentUser?.id) {
+        AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+          if (!isAllowed) {
+            // Insert here your friendly dialog box before call the request method
+            // This is very important to not harm the user experience
+            AwesomeNotifications().requestPermissionToSendNotifications();
+          }
+        });
+
+        //print(chat?.id);
+        AwesomeNotifications().createNotification(
+            content: NotificationContent(
+              id: m.id,
+              channelKey: 'message_recieved',
+              title: m.sender.phone_number,
+              body: m.body,
+              payload: {
+                'chat_id': chat?.id.toString() as String,
+                'message_id': m.id.toString(),
+                'user_id': m.sender.id.toString(),
+              },
+            ),
+            actionButtons: [
+              NotificationActionButton(
+                key: 'REPLY',
+                label: 'Reply',
+                autoCancel: true,
+                buttonType: ActionButtonType.InputField,
+              ),
+              NotificationActionButton(
+                  key: 'READ', label: 'Mark as read', autoCancel: true),
+            ]);
+      }
+    }
+
+    ChatRepository.getMessages(chat!, provider, read: read, notify: 0);
+
+    provider.setCurrentUser(currentUser!, save: false);
+    provider.update();
+
+    /* Provider.of<UserProvider>(context, listen: false)
+        .setCurrentUser(currentUser!); */
+    //print("body ${currentUser.chats?[0]?.messages?.last?.read}");
   }).listen('ChatLoaded', (Map<String, dynamic> message) {
     var map = HashMap.from(message);
     print(map['chat']);
     Chat c = Chat.fromJson(map['chat']);
-    Chat? chat = currentUser.chats
+    Chat? chat = currentUser?.chats
         ?.firstWhere((chat) => chat?.id == c.id, orElse: () => null as Chat);
 
     var msgs =
@@ -187,11 +267,17 @@ Future<void> listenChat(
           orElse: () => null as Message);
 
       if (con == null) {
-        c?.messages?.add(m);
-        currentUser?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
-        currentUser?.chats?.add(c);
+        c.messages?.add(m);
       }
     });
+    currentUser?.chats?.removeWhere((chat) => c.id == chat?.id);
+    // chat?.messages?.removeWhere((element) =>
+    //     c.messages?.map((e) => e?.uid).toList().contains(element?.uid) as bool);
+
+    // chat?.messages = [...chat.messages as List<Message>, ...c.messages!];
+    // currentUser?.chats = List.from(currentUser.chats as List<Chat>)..add(chat);
+    currentUser?.chats = List.from(currentUser.chats as List<Chat>)..add(c);
+
     /* chat.messages?.forEach((message) {
       currentUser.chats
           ?.firstWhere((c) => c?.id == chat.id, orElse: () => null)
@@ -204,50 +290,84 @@ Future<void> listenChat(
           .add(message);
     });
 
-    Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser); */
-  });
+        */
+    provider.setCurrentUser(currentUser!, save: false);
+    provider.update();
+    ChatRepository.getMessages(chat!, provider, read: 0, notify: 0);
+    /* Provider.of<UserProvider>(context, listen: false)
+        .setCurrentUser(currentUser!); */
+  }).listen('Typing', (Map<String, dynamic> data) {
+    var map = HashMap.from(data);
+    if (int.parse(map['user_id'].toString()) != currentUser?.id) {
+      print(map);
+      var chat = currentUser?.chats
+          ?.firstWhere((chat) => chat?.id == id, orElse: () => null as Chat);
 
-  await Future.delayed(Duration(seconds: 2));
+      currentUser?.chats?.removeWhere((chat) => id == chat?.id);
+      chat?.typing = true;
+      currentUser?.chats = List.from(currentUser.chats as List<Chat>)
+        ..add(chat);
+
+      provider.setCurrentUser(currentUser!, save: false);
+      Timer(const Duration(milliseconds: 900), () {
+        currentUser.chats?.removeWhere((chat) => id == chat?.id);
+        chat?.typing = false;
+        currentUser.chats = List.from(currentUser.chats as List<Chat>)
+          ..add(chat);
+
+        provider.setCurrentUser(currentUser, save: false);
+      });
+    }
+  });
+  //c.subscribed(() {
+  //print("socket connect ${echo.sockedId()}");
+  //});
+  //channel.subscribed(() {});
+
+  //print({id: channel});
+
+  //UserRepository.fetchUser(context);
+  //await Future.delayed(Duration(seconds: 2));
 }
 
 Future<void> listenOnline(
-    Echo echo, int id, User currentUser, BuildContext context) async {
+    Echo echo, int id, UserProvider provider, BuildContext context) async {
+  //UserProvider provider = Get.find();
+  User? currentUser = await provider.currentUser();
+  //await context.read<UserProvider>().currentUser();
   echo.private('user.${id.toString()}').listen('UserOnline',
       (Map<String, dynamic> message) {
     var map = HashMap.from(message);
     print(map['user']);
-    var u = currentUser.chats
+    var u = currentUser?.chats
         ?.firstWhere((chat) =>
             chat?.users?.firstWhere((user) => user?.id == map['user']['id']) !=
             null)
         ?.users!
-        .firstWhere((user) => user?.id == map['user']['id'])
+        .firstWhere((user) =>
+            user?.id != currentUser.id && user?.id == map['user']['id'])
           ?..online = map['user']['online'] == 1 ? true : false
           ..updated_at = DateTime.parse(map['user']['updated_at'] as String);
 
-    Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser);
+    provider.setCurrentUser(currentUser!, save: false);
+    provider.update();
+    /* Provider.of<UserProvider>(context, listen: false)
+        .setCurrentUser(currentUser!); */
   });
 
-  await Future.delayed(Duration(seconds: 2));
+  //UserRepository.fetchUser(context);
+
+  //await Future.delayed(Duration(seconds: 2));
 }
 
-Future<User> getUser(BuildContext context) async {
-  //return await UserRepository.fetchUser(context);
-
-  //return await UserRepository.login(context);
-  User? user =
-      await Provider.of<UserProvider>(context, listen: false).currentUser();
-  /* if (user?.access_token == null) {
-    return user = await UserRepository.login(context);
-  } */
-  return await UserRepository.fetchUser(context);
+Future<User> getUser(UserProvider provider) async {
+  return await UserRepository.fetchUser(provider);
 }
 
-resendDummy(Chat chat, BuildContext context) async {
-  User? currentUser =
-      await Provider.of<UserProvider>(context, listen: false).currentUser();
+Future<Chat> resendDummy(Chat chat, UserProvider provider) async {
+  //var provider = Get.put(UserProvider());
+  User? currentUser = await provider.currentUser();
+  //await Provider.of<UserProvider>(context, listen: false).currentUser();
   User user =
       chat.users?.firstWhere((user) => user?.id != currentUser?.id) as User;
 
@@ -255,6 +375,11 @@ resendDummy(Chat chat, BuildContext context) async {
       chat.messages?.where((message) => message?.dummy == true).toList();
 
   dummys?.forEach((message) async {
-    await ChatRepository.saveMessage(user!.id, message!, context);
+    var m = await ChatRepository.saveMessage(user!.id, message!, provider);
+    if (m != null) {
+      chat.messages?.removeWhere((value) => value?.uid == m.uid);
+      chat.messages?.add(m);
+    }
   });
+  return chat;
 }

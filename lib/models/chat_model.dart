@@ -7,16 +7,20 @@ part 'chat_model.g.dart';
 @JsonSerializable()
 class Chat {
   final int id;
-  final List<Message?>? messages;
-  final List<User?>? users;
+  List<Message?>? messages;
+  List<User?>? users;
   final DateTime created_at;
+  bool typing;
   Chat({
     required this.id,
     this.messages,
     this.users,
     required this.created_at,
+    this.typing = false,
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
   Map<String, dynamic> toJson() => _$ChatToJson(this);
 }
+
+class TextController {}
