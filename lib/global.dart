@@ -411,12 +411,14 @@ comparePhoneNumber(List<String> numbers, List<String> contacts) {
   return n;
 }
 
-String getUserName(UserProvider provider, String number) {
-  Contact? c = getUserContact(provider, number);
-  return c == null ? number : (c.givenName ?? number);
+String getUserName(SharedPreferences pref, String number) {
+  Map<String, String> c = getUserContact(pref, number);
+  return c.isEmpty ? number : c.values.toList().first;
 }
 
-Contact? getUserContact(UserProvider provider, String number) {
+Map<String, String> getUserContact(SharedPreferences pref, String number) {
+  Map<String, String> numberName = Map<String, String>.from(
+      jsonDecode(pref.getString('numberName') ?? '{}'));
   List<String> nums = [];
   if (number.startsWith('234') || number.startsWith('+234')) {
     if (number.startsWith('234')) {
@@ -433,16 +435,21 @@ Contact? getUserContact(UserProvider provider, String number) {
     nums = [number, "234$number", "+234$number"];
   }
 
-  Contact? c = provider.contacts?.firstWhere(
-      (contact) => contact.phones
-          ?.where((phone) => nums.contains(phone.value))
-          .isNotEmpty as bool,
-      orElse: () => null as Contact);
-  c?.phones?.toList().removeWhere((phone) => !nums.contains(phone.value));
-  return c;
+  return numberName..removeWhere((k, v) => !nums.contains(k));
+  // return List<String>.from(
+  //     numberName.entries.where((nm) => nums.contains(nm.key)));
+
+  // Contact? c = provider.contacts?.firstWhere(
+  //     (contact) => contact.phones
+  //         ?.where((phone) => nums.contains(phone.value))
+  //         .isNotEmpty as bool,
+  //     orElse: () => null as Contact);
+  // c?.phones?.toList().removeWhere((phone) => !nums.contains(phone.value));
+  // return c;
 }
 
-syncContacts(UserProvider provider) async {
+Future syncContacts(UserProvider provider) async {
+  var pref = await getPref();
   if (await Permission.contacts.request().isGranted) {
     Iterable<Contact> con = await ContactsService.getContacts();
     //provider.contacts = contacts;
@@ -456,8 +463,16 @@ syncContacts(UserProvider provider) async {
       //});
     });
 
-    List<String> nums = await UserRepository.checkNumbers(provider, numbers);
+    Map<String, dynamic> data =
+        await UserRepository.checkNumbers(provider, numbers);
 
+    print('data');
+    pref.remove('data');
+    pref.setString('data', jsonEncode(data));
+
+    List<String> nums = data.keys
+        .toList(); //await UserRepository.checkNumbers(provider, numbers);
+    print(nums);
     List<String> validNum = comparePhoneNumber(nums, numbers);
 
     //print(validNum);
@@ -468,8 +483,22 @@ syncContacts(UserProvider provider) async {
             .isNotEmpty)
         .toList();
 
+    Map<String, String>? numberName = {};
+    validContacts.forEach((contact) {
+      contact.phones?.forEach((phone) {
+        numberName.addAll(
+            {phone.value?.replaceAll(' ', '') ?? '': contact.givenName ?? ''});
+      });
+    });
+
     provider.contacts = validContacts;
-    //print(validContacts);
+    //if (numberName != {}) {
+    pref.remove('numberName');
+    pref.setString('numberName', jsonEncode(numberName));
+    //}
+    //print(numberName);
+    // var num = await provider.getNumberName();
+    // print("start $num");
     //});
   }
 
@@ -479,4 +508,14 @@ syncContacts(UserProvider provider) async {
 //   Permission.storage,
 // ].request();
 // print(statuses[Permission.location]);
+}
+
+formatNumber(String number) {
+  if (number.startsWith('+234')) {
+    return number.replaceFirst('+', '');
+  } else if (number.startsWith('234')) {
+    return "$number";
+  } else {
+    return "234${number.substring(1)}";
+  }
 }

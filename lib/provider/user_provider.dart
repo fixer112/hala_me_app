@@ -22,13 +22,32 @@ class UserProvider extends GetxController {
 
   List<Contact>? contacts;
 
-  // Iterable<Contact>? get contacts {
-  //   return _contacts;
-  // }
+  Map<String, String> _numberName = {};
 
-  // set contacts(Iterable<Contact>? contacts) {
-  //   _contacts = contacts;
-  // }
+  Future<Map<String, String>?> numberName() async {
+    return _numberName;
+    // var pref = await getPref();
+    // Map<String, String>? numberName;
+    // //await pref.reload();
+    // try {
+    //   var numberName = pref.getString('numberName') ??
+    //       jsonDecode(pref.getString('numberName') ?? '');
+
+    //   numberName = numberName != ""
+    //       ? Map<String, String>.from(jsonDecode(numberName))
+    //       : null;
+    // } catch (e) {}
+    // return _numberName ?? numberName;
+  }
+
+  setNumberName(Map<String, String> numberName) async {
+    _numberName = numberName;
+    update();
+    // var pref = await getPref();
+    // var n = jsonEncode(numberName);
+    // pref.remove('numberName');
+    // pref.setString('numberName', n);
+  }
 
   Future<User?> currentUser() async {
     var pref = await getPref();

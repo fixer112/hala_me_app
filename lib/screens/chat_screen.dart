@@ -14,6 +14,7 @@ import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:laravel_echo/src/channel/private-channel.dart';
 
@@ -46,6 +47,9 @@ class _ChatScreenState extends State<ChatScreen> {
   bool loading = false;
 
   PrivateChannel? channel;
+  Map<String, String>? nums = {};
+
+  SharedPreferences? pref;
 
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
     //print(message.delivered);
@@ -329,6 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     //print(globalEcho?.connector);
     whisperType();
+    getPref().then((value) => pref = value);
     getUser().then((value) {
       /* globalEcho
           ?.private('chat.${widget.chat.id.toString()}')
@@ -370,7 +375,7 @@ class _ChatScreenState extends State<ChatScreen> {
     controller!.addListener(() async {
       //print(controller?.text);
 
-      t1 = Timer(const Duration(seconds: 2), () async {
+      t1 = Timer(const Duration(milliseconds: 300), () async {
         /* channel?.whisper('typing', {
         'user_id': user!.id,
         'typing': true,
@@ -398,6 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<User> getUser() async {
+    nums = await provider.numberName();
     /* currentUser =
         await Provider.of<UserProvider>(context, listen: false).currentUser(); */
     var us = await provider.currentUser();
@@ -415,7 +421,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return user == null
+    return user == null || pref == null
         ? loader()
         : Scaffold(
             backgroundColor: Color(0xFFF6F6F6),
@@ -427,7 +433,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                        text: getUserName(provider, user?.phone_number ?? ''),
+                        text: getUserName(pref!, user?.phone_number ?? ''),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,

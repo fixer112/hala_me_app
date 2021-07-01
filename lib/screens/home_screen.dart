@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:connectivity/connectivity.dart';
@@ -13,9 +15,11 @@ import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/repositories/user_repository.dart';
 import 'package:hala_me/screens/chat_screen.dart';
+import 'package:hala_me/screens/contacts_screen.dart';
 import 'package:hala_me/screens/login_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:laravel_echo/laravel_echo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   UserProvider provider = Get.put(UserProvider());
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  Map<String, String>? nums = {};
+  SharedPreferences? pref;
 
   resend() async {
     //print('dummy');
@@ -95,11 +101,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
+    getPref().then((value) => pref = value);
+
     getUser(provider).then((User user) {
       //print(user.access_token);
       //return;
+
       if (widget.first == true) {
         Echo echo = initPusher(user);
+
         globalEcho = echo;
         //print("echo socket id ${echo.sockedId()}");
         //return print("token ${user.access_token}");
@@ -205,6 +216,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
+        floatingActionButton: GestureDetector(
+          onTap: () {
+            //print(pref!.getString('data'));
+            //UserRepository.checkNumbers(provider, ['08034235999']);
+          },
+          child: Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius: BorderRadius.all(Radius.circular(25)),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.message, color: Colors.white),
+              onPressed: () {
+                getPref().then((value) => print(Map<String, dynamic>.from(
+                        jsonDecode(value.getString('data') ?? ''))[
+                    formatNumber('08034235999')]));
+                Get.to(Contacts());
+              },
+            ),
+          ),
+        ),
         backgroundColor: Colors.white,
         appBar: AppBar(
           brightness: Brightness.dark,
@@ -225,7 +259,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               icon: Icon(Icons.logout),
               color: Colors.white,
               onPressed: () async {
-                //await syncContacts(provider);
+                //print('test');
+                // await syncContacts(provider);
+                // Map<String, String>? nums = await provider.numberName();
+                // print("end $nums");
+                //print(provider.contacts?.length);
+                // print(getUserContact(nums ?? {}, '2348034235999'));
                 //print(getUserName(provider, '2348034235999'));
 
                 //print(comparePhoneNumber(['2348034235999'], ['08034235999']));
@@ -240,10 +279,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         body: GetBuilder<UserProvider>(
             //init: UserProvider(),
             builder: (_) {
+          //provider.numberName().then((value) => nums = value);
           return FutureBuilder<User?>(
               future: provider.currentUser(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (!snapshot.hasData || pref == null) {
                   return loader();
                 }
                 User? currentUser = snapshot.data;
@@ -370,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                             Row(
                                               children: <Widget>[
                                                 Text(
-                                                  getUserName(provider,
+                                                  getUserName(pref!,
                                                       chatUser!.phone_number),
                                                   style: TextStyle(
                                                     fontSize: 16,

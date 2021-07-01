@@ -159,7 +159,7 @@ class UserRepository {
     }
   }
 
-  static Future<List<String>> checkNumbers(
+  static Future<Map<String, dynamic>> checkNumbers(
       UserProvider provider, List<String> numbers) async {
     //return;
     //UserProvider provider = Get.find();
@@ -174,11 +174,12 @@ class UserRepository {
       }, body: {
         'numbers': jsonEncode(numbers)
       });
-      print(res.body);
-      List<String> num = List<String>.from((jsonDecode(res.body)));
+      Map<String, dynamic> num =
+          Map<String, dynamic>.from(jsonDecode(res.body));
+      //print(num.values.toList());
       return num;
     }
 
-    return [];
+    return {};
   }
 }
