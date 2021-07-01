@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -73,7 +74,26 @@ class _ContactsState extends State<Contacts> {
 
             var nums = Map<String, String>.from(
                 jsonDecode(p?.getString('numberName') ?? '{}'));
+            var data = Map<String, dynamic>.from(
+                jsonDecode(p?.getString('data') ?? '{}'));
             var numbers = nums.keys.toSet().toList();
+
+            var datas = data.keys.toList();
+
+            //print(numbers);
+
+            List<String> validNumbers = [];
+            numbers.forEach((element) {
+              numbers[numbers.indexOf(element)] = formatNumber(element);
+              if (datas.contains(formatNumber(element))) {
+                validNumbers.add(formatNumber(element));
+                //numbers.remove(formatNumber(element));
+              }
+            });
+
+            numbers = validNumbers.toSet().toList();
+
+            //print(numbers);
 
             return Container(
               child: ListView.builder(
@@ -83,7 +103,12 @@ class _ContactsState extends State<Contacts> {
                       padding: const EdgeInsets.only(bottom: 5.0),
                       child: Card(
                         child: ListTile(
-                          title: Text(getUserName(p!, numbers[index])),
+                          title: Text(
+                            getUserName(p!, numbers[index]),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           subtitle: Text(numbers[index]),
                         ),
                       ),
