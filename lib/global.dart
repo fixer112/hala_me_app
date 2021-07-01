@@ -52,11 +52,16 @@ String chatDate(DateTime date) {
           : DateFormat('EE, d MMM, yyyy').format(date);
 }
 
-Widget loader() {
-  return Container(
+Widget loader({Color? color, double scale = 1}) {
+  color = color ?? primaryColor;
+  return Transform.scale(
+    scale: scale,
     //color: Colors.white,
     child: Center(
-      child: CircularProgressIndicator(),
+      child: CircularProgressIndicator(
+        color: color,
+        //value: 1,
+      ),
     ),
   );
 }
@@ -452,6 +457,7 @@ Future syncContacts(UserProvider provider) async {
   var pref = await getPref();
   if (await Permission.contacts.request().isGranted) {
     Iterable<Contact> con = await ContactsService.getContacts();
+    print('fetching contact');
     //provider.contacts = contacts;
     List<Contact> contacts = con.toList();
 
@@ -486,8 +492,9 @@ Future syncContacts(UserProvider provider) async {
     Map<String, String>? numberName = {};
     validContacts.forEach((contact) {
       contact.phones?.forEach((phone) {
-        numberName.addAll(
-            {phone.value?.replaceAll(' ', '') ?? '': contact.givenName ?? ''});
+        numberName.addAll({
+          phone.value?.replaceAll(' ', '') ?? '': "${contact.displayName ?? ''}"
+        });
       });
     });
 

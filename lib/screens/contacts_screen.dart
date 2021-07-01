@@ -44,24 +44,22 @@ class _ContactsState extends State<Contacts> {
             ),
           ),
           actions: <Widget>[
-            loading == false
-                ? IconButton(
+            loading == true
+                ? loader(color: Colors.white, scale: 0.4)
+                : IconButton(
                     icon: Icon(Icons.refresh),
                     color: Colors.white,
-                    onPressed: loading == true
-                        ? null
-                        : () {
-                            var provider = Get.put(UserProvider());
-                            setState(() {
-                              loading = true;
-                            });
-                            syncContacts(provider);
-                            setState(() {
-                              loading = false;
-                            });
-                          },
+                    onPressed: () async {
+                      var provider = Get.put(UserProvider());
+                      setState(() {
+                        loading = true;
+                      });
+                      await syncContacts(provider);
+                      setState(() {
+                        loading = false;
+                      });
+                    },
                   )
-                : loader()
           ]),
       body: FutureBuilder<SharedPreferences>(
           future: getPref(),
