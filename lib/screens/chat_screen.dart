@@ -427,27 +427,35 @@ class _ChatScreenState extends State<ChatScreen> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                        text: user?.phone_number,
+                        text: getUserName(provider, user?.phone_number ?? ''),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
                         )),
                     TextSpan(text: '\n'),
-                    checkOnline(user!) ?? false
+                    widget.chat.typing == true
                         ? TextSpan(
-                            text: 'Online',
+                            text: 'Typing...',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w400,
                             ),
                           )
-                        : TextSpan(
-                            text: 'Offline',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          )
+                        : checkOnline(user!) ?? false
+                            ? TextSpan(
+                                text: 'Online',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              )
+                            : TextSpan(
+                                text: 'Offline',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              )
                   ],
                 ),
               ),

@@ -20,11 +20,12 @@ import 'package:hala_me/repositories/user_repository.dart';
 import 'package:hala_me/values.dart';
 import 'package:intl/intl.dart';
 import 'package:laravel_echo/laravel_echo.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:laravel_echo/src/channel/private-channel.dart';
-import 'package:flutter_pusher_client/flutter_pusher.dart';
+import 'package:contacts_service/contacts_service.dart';
 
 Future<SharedPreferences> getPref() async {
   SharedPreferences _prefs = await SharedPreferences.getInstance();
@@ -53,7 +54,7 @@ String chatDate(DateTime date) {
 
 Widget loader() {
   return Container(
-    color: Colors.white,
+    //color: Colors.white,
     child: Center(
       child: CircularProgressIndicator(),
     ),
@@ -221,7 +222,7 @@ Future listenChat(
         //print(chat?.id);
         AwesomeNotifications().createNotification(
             content: NotificationContent(
-              id: m.id,
+              id: m.chat.id,
               channelKey: 'message_recieved',
               title: m.sender.phone_number,
               body: m.body,
@@ -382,4 +383,100 @@ Future<Chat> resendDummy(Chat chat, UserProvider provider) async {
     }
   });
   return chat;
+}
+
+comparePhoneNumber(List<String> numbers, List<String> contacts) {
+  List<String> n = [];
+  numbers.forEach((number) {
+    if (contacts.contains(number)) {
+      n.add(number);
+    }
+    if (number.startsWith('+234')) {
+      number = number.replaceFirst('+234', '0');
+      if (contacts.contains(number)) {
+        n.add(number);
+      }
+    }
+    if (number.startsWith('234')) {
+      number = number.replaceFirst('234', '0');
+      if (contacts.contains(number)) {
+        n.add(number);
+      }
+    }
+    number = "+234$number";
+    if (contacts.contains(number)) {
+      n.add(number);
+    }
+  });
+  return n;
+}
+
+String getUserName(UserProvider provider, String number) {
+  Contact? c = getUserContact(provider, number);
+  return c == null ? number : (c.givenName ?? number);
+}
+
+Contact? getUserContact(UserProvider provider, String number) {
+  List<String> nums = [];
+  if (number.startsWith('234') || number.startsWith('+234')) {
+    if (number.startsWith('234')) {
+      var n = number.replaceFirst('234', '0');
+      nums = [number, '+$number', n];
+    }
+
+    if (number.startsWith('+234')) {
+      var n = number.replaceFirst('+234', '0');
+      var n1 = number.replaceFirst('234', '0');
+      nums = [number, n1, n];
+    }
+  } else {
+    nums = [number, "234$number", "+234$number"];
+  }
+
+  Contact? c = provider.contacts?.firstWhere(
+      (contact) => contact.phones
+          ?.where((phone) => nums.contains(phone.value))
+          .isNotEmpty as bool,
+      orElse: () => null as Contact);
+  c?.phones?.toList().removeWhere((phone) => !nums.contains(phone.value));
+  return c;
+}
+
+syncContacts(UserProvider provider) async {
+  if (await Permission.contacts.request().isGranted) {
+    Iterable<Contact> con = await ContactsService.getContacts();
+    //provider.contacts = contacts;
+    List<Contact> contacts = con.toList();
+
+    List<String> numbers = [];
+
+    contacts.forEach((c) {
+      //c.phones?.forEach((p) {
+      numbers.addAll(c.phones!.map((e) => e.value as String).toList());
+      //});
+    });
+
+    List<String> nums = await UserRepository.checkNumbers(provider, numbers);
+
+    List<String> validNum = comparePhoneNumber(nums, numbers);
+
+    //print(validNum);
+
+    List<Contact> validContacts = contacts
+        .where((contact) => contact.phones!
+            .where((phone) => validNum.contains(phone.value))
+            .isNotEmpty)
+        .toList();
+
+    provider.contacts = validContacts;
+    //print(validContacts);
+    //});
+  }
+
+// You can request multiple permissions at once.
+// Map<Permission, PermissionStatus> statuses = await [
+//   Permission.location,
+//   Permission.storage,
+// ].request();
+// print(statuses[Permission.location]);
 }
