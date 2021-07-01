@@ -158,27 +158,4 @@ class UserRepository {
       //return currentUser;
     }
   }
-
-  static Future<List<String>> checkNumbers(
-      UserProvider provider, List<String> numbers) async {
-    //return;
-    //UserProvider provider = Get.find();
-    User? user = await provider.currentUser();
-
-    if (user?.access_token != null) {
-      var res = await http
-          .post(Uri.parse("${AppConfig.BASE_URL}/check_numbers"), headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ${user?.access_token}',
-        //'X-Socket-ID': currentSocketId,
-      }, body: {
-        'numbers': jsonEncode(numbers)
-      });
-      print(res.body);
-      List<String> num = List<String>.from((jsonDecode(res.body)));
-      return num;
-    }
-
-    return [];
-  }
 }

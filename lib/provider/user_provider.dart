@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:contacts_service/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -19,16 +18,6 @@ class UserProvider extends GetxController {
           updated_at: DateTime.now())
       .obs */
       ;
-
-  List<Contact>? contacts;
-
-  // Iterable<Contact>? get contacts {
-  //   return _contacts;
-  // }
-
-  // set contacts(Iterable<Contact>? contacts) {
-  //   _contacts = contacts;
-  // }
 
   Future<User?> currentUser() async {
     var pref = await getPref();

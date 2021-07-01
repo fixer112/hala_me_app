@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/screens/login_screen.dart';
-import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
@@ -29,7 +28,7 @@ void main() {
             channelKey: 'message_recieved',
             channelName: 'Message Recieved',
             channelDescription: 'Notification for recieved messages.',
-            defaultColor: primaryColor,
+            defaultColor: Color(0xFF9D50DD),
             ledColor: Colors.white)
       ]);
   AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
@@ -58,7 +57,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Hala Me',
       theme: ThemeData(
-        primaryColor: primaryColor,
+        primaryColor: Color(0xFF01afbd),
       ),
       home: LoginScreen(force: false),
     );

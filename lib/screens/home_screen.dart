@@ -58,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       int userId = int.parse(payload['user_id'] as String);
       Chat chat = u?.chats?.firstWhere((chat) => chat?.id == chatId) as Chat;
       //print(chat.id);
-
       if (!StringUtils.isNullOrEmpty(receivedNotification.buttonKeyInput)) {
         var m = Message(
           read: false,
@@ -74,14 +73,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await ChatRepository.saveMessage(userId, m, provider);
         await ChatRepository.getMessages(chat, provider);
         //processInputTextReceived(receivedNotification);
-        return;
       } else if (!StringUtils.isNullOrEmpty(
               receivedNotification.buttonKeyPressed) &&
           receivedNotification.buttonKeyPressed == 'READ') {
         await ChatRepository.getMessages(chat, provider);
-        return;
-      } else {
-        Get.to(ChatScreen(chat: chat));
       }
 
       // your page params. I recommend to you to pass all *receivedNotification* object
@@ -112,13 +107,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             listenOnline(echo, u.id, provider, context);
           }
         });
-        syncContacts(provider);
       }
     });
     //WidgetsBinding.instance!.addPostFrameCallback((_) => resend(context));
     // Timer.periodic(new Duration(minutes: 1), (timer) {
     //resend(context);
-
+    var p = Get.put(UserProvider());
     timer = Timer.periodic(new Duration(minutes: 2), (timer) => resend());
     // });
     super.initState();
@@ -224,11 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             IconButton(
               icon: Icon(Icons.logout),
               color: Colors.white,
-              onPressed: () async {
-                //await syncContacts(provider);
-                //print(getUserName(provider, '2348034235999'));
-
-                //print(comparePhoneNumber(['2348034235999'], ['08034235999']));
+              onPressed: () {
                 /* Provider.of<UserProvider>(context, listen: false)
                       .setCurrentUser(null as User); */
                 provider.setCurrentUser(null as User);
@@ -285,12 +275,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           final Message? message =
                               messages.isNotEmpty ? messages.first : null;
 
-                          final Message? uLm = messages.isNotEmpty
-                              ? messages.firstWhere(
-                                  (m) => m.sender.id != currentUser?.id,
-                                  orElse: () => null as Message)
-                              : null;
-
                           List<Message> unreads = messages
                               .where(
                                 (message) =>
@@ -319,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   Container(
                                     padding: EdgeInsets.all(2),
                                     decoration:
-                                        (uLm?.read == false) //chat.unread
+                                        (message?.read ?? true) //chat.unread
                                             ? BoxDecoration(
                                                 borderRadius: BorderRadius.all(
                                                     Radius.circular(40)),
@@ -370,8 +354,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                             Row(
                                               children: <Widget>[
                                                 Text(
-                                                  getUserName(provider,
-                                                      chatUser!.phone_number),
+                                                  chatUser!.phone_number,
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
