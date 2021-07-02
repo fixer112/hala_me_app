@@ -201,7 +201,7 @@ Future listenChat(
     // });
   }) */
 
-  channel.listen('MessageCreated', (Map<String, dynamic> message) {
+  channel.listen('MessageCreated', (Map<String, dynamic> message) async {
     var map = HashMap.from(message);
     // Map<String, String> mC =
     //     map.map((key, value) => MapEntry(key.toString(), value.toString()));
@@ -232,13 +232,13 @@ Future listenChat(
             AwesomeNotifications().requestPermissionToSendNotifications();
           }
         });
-
+        var pref = await getPref();
         //print(chat?.id);
         AwesomeNotifications().createNotification(
             content: NotificationContent(
               id: m.chat.id,
               channelKey: 'message_recieved',
-              title: m.sender.phone_number,
+              title: getUserName(pref, m.sender.phone_number),
               body: m.body,
               payload: {
                 'chat_id': chat?.id.toString() as String,
@@ -474,7 +474,8 @@ Future syncContacts(UserProvider provider) async {
 
     contacts.forEach((c) {
       //c.phones?.forEach((p) {
-      numbers.addAll(c.phones!.map((e) => e.value as String).toList());
+      numbers
+          .addAll(c.phones!.map((e) => formatNumber(e.value ?? '')).toList());
       //});
     });
 
@@ -502,7 +503,8 @@ Future syncContacts(UserProvider provider) async {
     validContacts.forEach((contact) {
       contact.phones?.forEach((phone) {
         numberName.addAll({
-          phone.value?.replaceAll(' ', '') ?? '': "${contact.displayName ?? ''}"
+          formatNumber(phone.value?.replaceAll(' ', '') ?? ''):
+              "${contact.displayName ?? ''}"
         });
       });
     });
@@ -526,7 +528,7 @@ Future syncContacts(UserProvider provider) async {
 // print(statuses[Permission.location]);
 }
 
-formatNumber(String number) {
+String formatNumber(String number) {
   if (number.startsWith('+234')) {
     return number.replaceFirst('+', '');
   } else if (number.startsWith('234')) {
