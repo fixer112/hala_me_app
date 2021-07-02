@@ -248,11 +248,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         appBar: AppBar(
           brightness: Brightness.dark,
           elevation: 8,
-          // leading: IconButton(
-          //   icon: Icon(Icons.menu),
-          //   color: Colors.white,
-          //   onPressed: () {},
-          // ),
+          leading: null,
           title: Text(
             "Hala Me",
             style: TextStyle(
