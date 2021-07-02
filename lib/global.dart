@@ -209,6 +209,9 @@ Future listenChat(
         ?.messages
         ?.add(m);
     int read = 0;
+    print('notification');
+    //print(Get.currentRoute);
+    print(currentChatPage);
     if (currentChatPage == id) {
       read = 1;
       if (m.sender.id != currentUser?.id) {
@@ -333,7 +336,7 @@ Future listenChat(
   //print({id: channel});
 
   //UserRepository.fetchUser(context);
-  //await Future.delayed(Duration(seconds: 2));
+  await Future.delayed(Duration(seconds: 2));
 }
 
 Future<void> listenOnline(
@@ -363,7 +366,7 @@ Future<void> listenOnline(
 
   //UserRepository.fetchUser(context);
 
-  //await Future.delayed(Duration(seconds: 2));
+  await Future.delayed(Duration(seconds: 2));
 }
 
 Future<User> getUser(UserProvider provider) async {

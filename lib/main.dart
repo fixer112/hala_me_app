@@ -27,7 +27,7 @@ void main() {
       [
         NotificationChannel(
             channelKey: 'message_recieved',
-            channelName: 'Message Recieved',
+            channelName: 'Message Notification',
             channelDescription: 'Notification for recieved messages.',
             defaultColor: primaryColor,
             ledColor: Colors.white)
@@ -49,12 +49,15 @@ void main() {
   );
 }
 
+//final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      //navigatorObservers: [routeObserver],
       debugShowCheckedModeBanner: false,
       title: 'Hala Me',
       theme: ThemeData(

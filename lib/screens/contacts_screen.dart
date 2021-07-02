@@ -4,7 +4,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/global.dart';
+import 'package:hala_me/models/chat_model.dart';
+import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
+import 'package:hala_me/screens/chat_screen.dart';
+import 'package:hala_me/values.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Contacts extends StatefulWidget {
@@ -18,6 +22,9 @@ class _ContactsState extends State<Contacts> {
   SharedPreferences? pref;
 
   bool loading = false;
+  UserProvider provider = Get.put(UserProvider());
+
+  User? currentUser;
 
   @override
   void initState() {
@@ -27,93 +34,140 @@ class _ContactsState extends State<Contacts> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-          brightness: Brightness.dark,
-          elevation: 8,
-          /* leading: IconButton(
-          icon: Icon(Icons.menu),
-          color: Colors.white,
-          onPressed: () {},
-        ), */
-          title: Text(
-            'Contacts',
-            style: TextStyle(
-              color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        currentChatPage = 0;
+        print(currentChatPage);
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+            brightness: Brightness.dark,
+            elevation: 8,
+            /* leading: IconButton(
+            icon: Icon(Icons.menu),
+            color: Colors.white,
+            onPressed: () {},
+          ), */
+            title: Text(
+              'Contacts',
+              style: TextStyle(
+                color: Colors.white,
+              ),
             ),
-          ),
-          actions: <Widget>[
-            loading == true
-                ? loader(color: Colors.white, scale: 0.4)
-                : IconButton(
-                    icon: Icon(Icons.refresh),
-                    color: Colors.white,
-                    onPressed: () async {
-                      var provider = Get.put(UserProvider());
-                      setState(() {
-                        loading = true;
-                      });
-                      await syncContacts(provider);
-                      setState(() {
-                        loading = false;
-                      });
-                    },
-                  )
-          ]),
-      body: FutureBuilder<SharedPreferences>(
-          future: getPref(),
-          builder: (context, snap) {
-            if (!snap.hasData) {
-              return Container();
-            }
+            actions: <Widget>[
+              loading == true
+                  ? loader(color: Colors.white, scale: 0.4)
+                  : IconButton(
+                      icon: Icon(Icons.refresh),
+                      color: Colors.white,
+                      onPressed: () async {
+                        var provider = Get.put(UserProvider());
+                        setState(() {
+                          loading = true;
+                        });
+                        await syncContacts(provider);
+                        setState(() {
+                          loading = false;
+                        });
+                      },
+                    )
+            ]),
+        body: GetBuilder<UserProvider>(
+            //init: UserProvider(),
+            builder: (_) {
+          provider.currentUser().then((value) => currentUser = value);
+          return FutureBuilder<SharedPreferences>(
+              future: getPref(),
+              builder: (context, snap) {
+                if (!snap.hasData) {
+                  return Container();
+                }
 
-            var p = snap.data;
+                var p = snap.data;
 
-            var nums = Map<String, String>.from(
-                jsonDecode(p?.getString('numberName') ?? '{}'));
-            var data = Map<String, dynamic>.from(
-                jsonDecode(p?.getString('data') ?? '{}'));
-            var numbers = nums.keys.toSet().toList();
+                var nums = Map<String, String>.from(
+                    jsonDecode(p?.getString('numberName') ?? '{}'));
+                var data = Map<String, dynamic>.from(
+                    jsonDecode(p?.getString('data') ?? '{}'));
+                var numbers = nums.keys.toSet().toList();
 
-            var datas = data.keys.toList();
+                var datas = data.keys.toList();
 
-            //print(numbers);
+                //print(numbers);
 
-            List<String> validNumbers = [];
-            numbers.forEach((element) {
-              numbers[numbers.indexOf(element)] = formatNumber(element);
-              if (datas.contains(formatNumber(element))) {
-                validNumbers.add(formatNumber(element));
-                //numbers.remove(formatNumber(element));
-              }
-            });
+                List<String> validNumbers = [];
+                numbers.forEach((element) {
+                  numbers[numbers.indexOf(element)] = formatNumber(element);
+                  if (datas.contains(formatNumber(element))) {
+                    validNumbers.add(formatNumber(element));
+                    //numbers.remove(formatNumber(element));
+                  }
+                });
 
-            numbers = validNumbers.toSet().toList();
+                numbers = validNumbers.toSet().toList();
+                numbers.removeWhere(
+                    (number) => number == currentUser?.phone_number);
 
-            //print(numbers);
+                //print(numbers);
 
-            return Container(
-              child: ListView.builder(
-                  itemCount: numbers.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 5.0),
-                      child: Card(
-                        child: ListTile(
-                          title: Text(
-                            getUserName(p!, numbers[index]),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text(numbers[index]),
-                        ),
-                      ),
-                    );
-                  }),
-            );
-          }),
+                return currentUser == null
+                    ? Container()
+                    : Container(
+                        child: ListView.builder(
+                            itemCount: numbers.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 5.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    var id = int.parse(
+                                        data[numbers[index]].toString());
+                                    Chat? chat = currentUser?.chats?.firstWhere(
+                                        (chat) => chat?.users
+                                            ?.where((u) => u?.id == id)
+                                            .isNotEmpty as bool,
+                                        orElse: () => null);
+                                    //print(chat?.id);
+                                    if (chat == null) {
+                                      chat = Chat(
+                                        id: 0,
+                                        created_at: DateTime.now(),
+                                        users: [
+                                          currentUser,
+                                          User(
+                                            id: id,
+                                            online: false,
+                                            created_at: DateTime.now(),
+                                            updated_at: DateTime.now(),
+                                            phone_number: numbers[index],
+                                          ),
+                                        ],
+                                        messages: [],
+                                      );
+                                    }
+                                    //print(chat.users);
+                                    Get.to(ChatScreen(chat: chat));
+                                  },
+                                  child: Card(
+                                    child: ListTile(
+                                      title: Text(
+                                        getUserName(p!, numbers[index]),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: Text(numbers[index]),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                      );
+              });
+        }),
+      ),
     );
   }
 }

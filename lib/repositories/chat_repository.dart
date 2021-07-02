@@ -93,6 +93,7 @@ class ChatRepository {
   static Future<Chat?>? getMessages(Chat chat, UserProvider provider,
       {int read: 1, notify: 1}) async {
     //UserProvider provider = Get.find();
+
     User? user = await provider.currentUser();
 
     User? u = chat.users?.firstWhere((u) => u?.id != user?.id);

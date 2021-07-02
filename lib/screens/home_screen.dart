@@ -86,22 +86,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           receivedNotification.buttonKeyPressed == 'READ') {
         await ChatRepository.getMessages(chat, provider);
         return;
-      } else {
-        Get.to(ChatScreen(chat: chat));
       }
+      //else {
+      //print('work');
+      Get.to(ChatScreen(chat: chat));
+    }
 
-      // your page params. I recommend to you to pass all *receivedNotification* object
-    });
+        // your page params. I recommend to you to pass all *receivedNotification* object
+        // }
+        );
   }
 
   @override
   void initState() {
-    WidgetsBinding.instance!.addObserver(this);
-    notificationAction();
     //initConnectivity();
-    _connectivitySubscription =
-        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
-
+    if (widget.first == true) {}
     getPref().then((value) => pref = value);
 
     getUser(provider).then((User user) {
@@ -109,6 +108,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       //return;
 
       if (widget.first == true) {
+        WidgetsBinding.instance!.addObserver(this);
+        notificationAction();
+        _connectivitySubscription =
+            _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
         Echo echo = initPusher(user);
 
         globalEcho = echo;
@@ -123,14 +127,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             listenOnline(echo, u.id, provider, context);
           }
         });
+
         syncContacts(provider);
+        timer = Timer.periodic(new Duration(minutes: 2), (timer) => resend());
       }
     });
     //WidgetsBinding.instance!.addPostFrameCallback((_) => resend(context));
     // Timer.periodic(new Duration(minutes: 1), (timer) {
     //resend(context);
 
-    timer = Timer.periodic(new Duration(minutes: 2), (timer) => resend());
     // });
     super.initState();
   }
@@ -243,13 +248,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         appBar: AppBar(
           brightness: Brightness.dark,
           elevation: 8,
-          leading: IconButton(
-            icon: Icon(Icons.menu),
-            color: Colors.white,
-            onPressed: () {},
-          ),
+          // leading: IconButton(
+          //   icon: Icon(Icons.menu),
+          //   color: Colors.white,
+          //   onPressed: () {},
+          // ),
           title: Text(
-            'Inbox',
+            "Hala Me",
             style: TextStyle(
               color: Colors.white,
             ),
@@ -287,6 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   return loader();
                 }
                 User? currentUser = snapshot.data;
+                //print("user ${currentUser?.chats}");
                 // if (currentUser?.chats != null) {
                 //   currentUser?.chats?.forEach((chat) {
                 //     chat?.messages?.sort(

@@ -36,9 +36,9 @@ class UserRepository {
     }, body: {
       'phone_number': number
     });
-    //print(res.body);
-    if (res.statusCode != 200) {
-      return Get.snackbar("", "invalid number");
+    print(res.body);
+    if ([200, 201].contains(res.statusCode)) {
+      return Get.snackbar("", "Invalid number. Start with 234 and 13 digit.");
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
     //print(res.request);
@@ -166,17 +166,19 @@ class UserRepository {
     User? user = await provider.currentUser();
 
     if (user?.access_token != null) {
+      //print(jsonEncode(numbers));
       var res = await http
           .post(Uri.parse("${AppConfig.BASE_URL}/check_numbers"), headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer ${user?.access_token}',
         //'X-Socket-ID': currentSocketId,
       }, body: {
-        'numbers': jsonEncode(numbers)
+        'numbers': jsonEncode(numbers.isNotEmpty ? numbers : [''])
       });
+      print("type ${jsonDecode(res.body).runtimeType}");
+      print(jsonDecode(res.body));
       Map<String, dynamic> num =
           Map<String, dynamic>.from(jsonDecode(res.body));
-      //print(num.values.toList());
       return num;
     }
 
