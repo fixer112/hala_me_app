@@ -37,7 +37,7 @@ class UserRepository {
       'phone_number': number
     });
     print(res.body);
-    if ([200, 201].contains(res.statusCode)) {
+    if (![200, 201].contains(res.statusCode)) {
       return Get.snackbar("", "Invalid number. Start with 234 and 13 digit.");
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));

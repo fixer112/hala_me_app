@@ -45,6 +45,7 @@ dependencies:
   awesome_notifications: ^0.0.6+9
   permission_handler: ^8.1.2
   contacts_service: ^0.6.1
+  intl_phone_field: ^2.0.1
 
 dev_dependencies:
   flutter_test:

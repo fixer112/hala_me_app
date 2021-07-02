@@ -52,17 +52,23 @@ String chatDate(DateTime date) {
           : DateFormat('EE, d MMM, yyyy').format(date);
 }
 
-Widget loader({Color? color, double scale = 1}) {
+Widget loader({Color? color, double scale = 1, bool center = true}) {
   color = color ?? primaryColor;
+  Widget child = center == true
+      ? Center(
+          child: CircularProgressIndicator(
+            color: color,
+            //value: 1,
+          ),
+        )
+      : CircularProgressIndicator(
+          color: color,
+          //value: 1,
+        );
   return Transform.scale(
     scale: scale,
     //color: Colors.white,
-    child: Center(
-      child: CircularProgressIndicator(
-        color: color,
-        //value: 1,
-      ),
-    ),
+    child: child,
   );
 }
 
