@@ -242,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         backgroundColor: Colors.white,
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           brightness: Brightness.dark,
           elevation: 8,
           leading: null,

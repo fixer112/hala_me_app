@@ -149,7 +149,7 @@ class ChatRepository {
         //print(un!.isNotEmpty ? un.first?.body : 0);
 
         //print(c.messages?[0]?.read);
-        provider.setCurrentUser(user!, save: false);
+        provider.setCurrentUser(user!);
         //context.read<UserProvider>().setCurrentUser(user!, save: false);
 
         return c;
