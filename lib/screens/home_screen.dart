@@ -100,8 +100,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     //initConnectivity();
-    if (widget.first == true) {}
-    getPref().then((value) => pref = value);
 
     getUser(provider).then((User user) {
       //print(user.access_token);
@@ -212,7 +210,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    currentChatPage = 0;
+    //currentChatPage = 0;
+    getPref().then((value) => pref = value);
     //print("current page $currentChatPage");
     // return GetX<UserProvider>(
     //     init: UserProvider(),
@@ -236,9 +235,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: IconButton(
               icon: Icon(Icons.message, color: Colors.white),
               onPressed: () {
-                getPref().then((value) => print(Map<String, dynamic>.from(
-                        jsonDecode(value.getString('data') ?? ''))[
-                    formatNumber('08034235999')]));
                 Get.to(Contacts());
               },
             ),

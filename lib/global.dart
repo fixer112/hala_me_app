@@ -491,21 +491,22 @@ Future syncContacts(UserProvider provider) async {
     print(nums);
     List<String> validNum = comparePhoneNumber(nums, numbers);
 
+    //print("numbers $validNum");
+
     //print(validNum);
 
     List<Contact> validContacts = contacts
         .where((contact) => contact.phones!
-            .where((phone) => validNum.contains(phone.value))
+            .where(
+                (phone) => validNum.contains(formatNumber(phone.value ?? '')))
             .isNotEmpty)
         .toList();
 
     Map<String, String>? numberName = {};
     validContacts.forEach((contact) {
       contact.phones?.forEach((phone) {
-        numberName.addAll({
-          formatNumber(phone.value?.replaceAll(' ', '') ?? ''):
-              "${contact.displayName ?? ''}"
-        });
+        numberName.addAll(
+            {formatNumber(phone.value ?? ''): "${contact.displayName ?? ''}"});
       });
     });
 
@@ -529,6 +530,7 @@ Future syncContacts(UserProvider provider) async {
 }
 
 String formatNumber(String number) {
+  number = number.replaceAll(' ', '');
   if (number.startsWith('+234')) {
     return number.replaceFirst('+', '');
   } else if (number.startsWith('234')) {

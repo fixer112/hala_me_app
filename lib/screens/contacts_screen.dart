@@ -68,9 +68,11 @@ class _ContactsState extends State<Contacts> {
                           loading = true;
                         });
                         await syncContacts(provider);
-                        setState(() {
-                          loading = false;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            loading = false;
+                          });
+                        }
                       },
                     )
             ]),
