@@ -40,6 +40,7 @@ class UserRepository {
       'device_id': id,
       'otp': otp,
     });
+    print((res.statusCode));
     print((res.body));
     //print(jsonDecode(res.body));
     if (![200, 201].contains(res.statusCode)) {
@@ -50,8 +51,9 @@ class UserRepository {
     }
     if (res.body == 'otp sent') {
       Get.off(OTPScreen(number));
-      return;
+      return null;
     }
+
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
     //print(res.request);
     //print(map);

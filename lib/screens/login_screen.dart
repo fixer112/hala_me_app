@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hala_me/config.dart';
 import 'package:hala_me/global.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
@@ -221,6 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? null
                           : () async {
                               //return Get.to(OTPScreen());
+                              //print(AppConfig.DOMAIN_PATH);
                               bool check =
                                   _formKey.currentState?.validate() as bool;
                               if (check == true) {

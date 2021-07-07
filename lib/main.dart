@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/screens/login_screen.dart';
+import 'package:hala_me/screens/otp_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
 
@@ -63,7 +64,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: primaryColor,
       ),
-      home: LoginScreen(force: false),
+      home: /* OTPScreen('2348106813749') */ LoginScreen(force: false),
     );
   }
 }
