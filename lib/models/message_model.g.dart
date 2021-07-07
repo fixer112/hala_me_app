@@ -15,8 +15,10 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
     chat: Chat.fromJson(json['chat'] as Map<String, dynamic>),
     created_at: DateTime.parse(json['created_at'] as String),
     body: json['body'] as String,
-    dummy: json['dummy'] as bool,
+    dummy: json['dummy'].toString() == '1' ? true : false,
     uid: json['uid'] as String,
+    encrypted: json['encrypted'].toString() == '1' ? true : false,
+    alerted: json['alerted'].toString() == '1' ? true : false,
   );
 }
 
@@ -30,4 +32,6 @@ Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
       'delivered': instance.delivered,
       'dummy': instance.dummy,
       'uid': instance.uid,
+      'encrypted': instance.encrypted,
+      'alerted': instance.alerted,
     };

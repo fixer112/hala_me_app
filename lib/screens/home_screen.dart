@@ -3,10 +3,12 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hala_me/config.dart';
 import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
@@ -257,19 +259,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               icon: Icon(Icons.logout),
               color: Colors.white,
               onPressed: () async {
+                //print(await getId());
                 //print('test');
-                // await syncContacts(provider);
-                // Map<String, String>? nums = await provider.numberName();
-                // print("end $nums");
-                //print(provider.contacts?.length);
-                // print(getUserContact(nums ?? {}, '2348034235999'));
-                //print(getUserName(provider, '2348034235999'));
-
-                //print(comparePhoneNumber(['2348034235999'], ['08034235999']));
-                /* Provider.of<UserProvider>(context, listen: false)
-                      .setCurrentUser(null as User); */
                 provider.setCurrentUser(null as User);
-                Get.off(LoginScreen());
+                logout(provider);
               },
             ),
           ],
@@ -338,6 +331,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               )
                               .toList();
 
+                          //print("${chatUser!.imageUrl}");
+
                           //print(unreads.isNotEmpty ? unreads.first.read : 0);
                           return GestureDetector(
                             onTap: () => Navigator.push(
@@ -372,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                   BoxShadow(
                                                     color: Colors.grey
                                                         .withOpacity(0.5),
-                                                    spreadRadius: 2,
+                                                    spreadRadius: 1,
                                                     blurRadius: 5,
                                                   ),
                                                 ],
@@ -383,15 +378,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                   BoxShadow(
                                                     color: Colors.grey
                                                         .withOpacity(0.5),
-                                                    spreadRadius: 2,
+                                                    spreadRadius: 1,
                                                     blurRadius: 5,
                                                   ),
                                                 ],
                                               ),
-                                    child: CircleAvatar(
-                                      radius: 35,
-                                      backgroundImage: AssetImage(
-                                          'assets/images/black-widow.jpg' /* chat.sender.imageUrl */),
+                                    child: CachedNetworkImage(
+                                      imageUrl:
+                                          "${AppConfig.RAW_BASE_URL}${chatUser!.imageUrl}",
+                                      imageBuilder: (context, imageProvider) =>
+                                          SizedBox(
+                                        height: 35,
+                                        width: 35,
+                                        child: CircleAvatar(
+                                            radius: 35,
+                                            backgroundImage:
+                                                imageProvider /* AssetImage(
+                                                        chatUser!.imageUrl
+                                                            as String)*/
+                                            ),
+                                      ),
+                                      placeholder: (context, url) =>
+                                          loader(scale: 0.5),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
                                     ),
                                   ),
                                   Container(

@@ -46,6 +46,10 @@ dependencies:
   permission_handler: ^8.1.2
   contacts_service: ^0.6.1
   intl_phone_field: ^2.0.1
+  device_info: ^2.0.2
+  encrypt: ^5.0.0
+  cached_network_image: ^3.0.0
+  numeric_keyboard: ^1.1.0
 
 dev_dependencies:
   flutter_test:

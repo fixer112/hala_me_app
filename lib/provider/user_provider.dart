@@ -59,6 +59,7 @@ class UserProvider extends GetxController {
 
       user = _user != "" ? User.fromJson(jsonDecode(_user)) : null;
     } catch (e) {
+      _currentUser = null as User;
       Get.off(LoginScreen());
     }
     //_currentUser.refresh();

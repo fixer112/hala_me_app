@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/global.dart';
@@ -5,6 +6,7 @@ import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/user_repository.dart';
 import 'package:hala_me/screens/home_screen.dart';
+import 'package:hala_me/screens/otp_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
@@ -64,86 +66,219 @@ class _LoginScreenState extends State<LoginScreen> {
         onWillPop: () async => false,
         child: Scaffold(
           //backgroundColor: Theme.of(context).primaryColor,
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 30),
-                    IntlPhoneField(
-                      countries: ["NG"],
-                      initialCountryCode: 'NG',
-                      decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        // border: OutlineInputBorder(
-                        //   borderSide: BorderSide(),
-                        // ),
-                      ),
-                      onChanged: (phone) {
-                        //print(phone.completeNumber);
-                        phoneNumber = phone.completeNumber;
-                      },
-                      onCountryChanged: (phone) {
-                        //print('Country code changed to:  ${phone.countryCode}');
-                        //print(phone.completeNumber);
-                        phoneNumber = phone.completeNumber;
-                      },
+          body:
+              /* Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 30),
+                  IntlPhoneField(
+                    countries: ["NG"],
+                    initialCountryCode: 'NG',
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      // border: OutlineInputBorder(
+                      //   borderSide: BorderSide(),
+                      // ),
                     ),
-                    /*  TextField(
+                    onChanged: (phone) {
+                      //print(phone.completeNumber);
+                      phoneNumber = phone.completeNumber;
+                    },
+                    onCountryChanged: (phone) {
+                      //print('Country code changed to:  ${phone.countryCode}');
+                      //print(phone.completeNumber);
+                      phoneNumber = phone.completeNumber;
+                    },
+                  ),
+                  /*  TextField(
                     keyboardType: TextInputType.number,
                     controller: controller,
                   ),
                 ), */
-                    Center(
-                      child: Container(
-                        /*  constraints: BoxConstraints(
+                  Center(
+                    child: Container(
+                      /*  constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.80,
                         ), */
-                        margin: EdgeInsets.only(top: 20),
-                        padding: EdgeInsets.symmetric(horizontal: 25),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          borderRadius: BorderRadius.circular(5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: TextButton(
-                          onPressed: () async {
-                            bool check =
-                                _formKey.currentState?.validate() as bool;
-                            if (check == true) {
-                              phoneNumber = phoneNumber.replaceFirst('+', '');
-                              print(phoneNumber);
-                              //print(controller.text);
-                              loading = true;
-                              setState(() {});
+                      margin: EdgeInsets.only(top: 20),
+                      padding: EdgeInsets.symmetric(horizontal: 25),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: TextButton(
+                        onPressed: () async {
+                          bool check =
+                              _formKey.currentState?.validate() as bool;
+                          if (check == true) {
+                            phoneNumber = phoneNumber.replaceFirst('+', '');
+                            print(phoneNumber);
+                            //print(controller.text);
+                            loading = true;
+                            setState(() {});
+                            try {
                               await UserRepository.login(phoneNumber);
+                            } catch (e) {
+                              print(e);
                               loading = false;
-                              setState(() {});
                             }
-                          },
-                          child: loading == true
-                              ? loader(
-                                  scale: 0.5,
-                                  center: false,
-                                  color: Colors.white)
-                              : Text(
-                                  "Login",
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                            loading = false;
+                            setState(() {});
+                          }
+                        },
+                        child: loading == true
+                            ? loader(
+                                scale: 0.5, center: false, color: Colors.white)
+                            : Text(
+                                "Login",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+       */
+              Center(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Container(
+                      constraints: const BoxConstraints(maxWidth: 500),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(children: <TextSpan>[
+                          TextSpan(
+                              text: 'We will send you an ',
+                              style: TextStyle(color: primaryColor)),
+                          TextSpan(
+                              text: 'One Time Password ',
+                              style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.bold)),
+                          TextSpan(
+                              text: 'on this mobile number',
+                              style: TextStyle(color: primaryColor)),
+                        ]),
+                      )),
+                  Container(
+                    height: 40,
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: CupertinoTextFormFieldRow(
+                      validator: (value) {
+                        if (value?.length != 10) {
+                          return "Invalid Phone Number";
+                        }
+                      },
+                      prefix: Container(
+                        //height: 20,
+
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        //height: 40,
+                        //constraints: const BoxConstraints(maxWidth: 500),
+
+                        child: Text('+234'),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(4))),
+                      controller: controller,
+                      //clearButtonMode: OverlayVisibilityMode.editing,
+                      keyboardType: TextInputType.phone,
+                      maxLines: 1,
+                      //placeholder: '',
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: RaisedButton(
+                      onPressed: loading == true
+                          ? null
+                          : () async {
+                              //return Get.to(OTPScreen());
+                              bool check =
+                                  _formKey.currentState?.validate() as bool;
+                              if (check == true) {
+                                phoneNumber =
+                                    "234${controller.text}"; //.replaceFirst('+', '');
+                                print(phoneNumber);
+                                //print(controller.text);
+                                loading = true;
+                                setState(() {});
+                                try {
+                                  await UserRepository.login(phoneNumber);
+                                } catch (e) {
+                                  print(e);
+                                  loading = false;
+                                }
+                                if (mounted) {
+                                  loading = false;
+                                  setState(() {});
+                                }
+                              }
+                            },
+                      color: primaryColor,
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(14))),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text(
+                              'Next',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            loading == true
+                                ? loader(
+                                    scale: 0.5,
+                                    center: false,
+                                    color: Colors.white)
+                                : Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(20)),
+                                      color: primaryColor,
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  )
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  )
+                ],
               ),
             ),
           ),

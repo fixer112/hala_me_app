@@ -14,7 +14,7 @@ User _$UserFromJson(Map<String, dynamic> json) {
     email: json['email'] as String,
     username: json['username'] as String,
     name: json['name'] as String,
-    imageUrl: json['imageUrl'] as String,
+    imageUrl: json['image_url'] as String,
     chats: (json['chats'] as List)
         ?.map(
             (e) => e == null ? null : Chat.fromJson(e as Map<String, dynamic>))
@@ -31,7 +31,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'name': instance.name,
       'email': instance.email,
       'username': instance.username,
-      'imageUrl': instance.imageUrl,
+      'image_url': instance.imageUrl,
       'chats': instance.chats,
       'created_at': instance.created_at?.toIso8601String(),
       'updated_at': instance.updated_at?.toIso8601String(),

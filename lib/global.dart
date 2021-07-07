@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:connectivity/connectivity.dart';
+import 'package:encrypt/encrypt.dart' as E;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +19,7 @@ import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/repositories/user_repository.dart';
+import 'package:hala_me/screens/login_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:intl/intl.dart';
 import 'package:laravel_echo/laravel_echo.dart';
@@ -26,6 +29,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:laravel_echo/src/channel/private-channel.dart';
 import 'package:contacts_service/contacts_service.dart';
+import 'package:device_info/device_info.dart';
 
 Future<SharedPreferences> getPref() async {
   SharedPreferences _prefs = await SharedPreferences.getInstance();
@@ -210,10 +214,15 @@ Future listenChat(
     var m = Message.fromJson(map['message']);
     var chat = currentUser?.chats
         ?.firstWhere((chat) => chat?.id == map['message']['chat']['id']);
-    currentUser?.chats
+    var messages = currentUser?.chats
         ?.firstWhere((chat) => chat?.id == map['message']['chat']['id'])
-        ?.messages
-        ?.add(m);
+        ?.messages;
+    if (messages!.where((msg) => msg?.uid == m.uid).isEmpty) {
+      currentUser?.chats
+          ?.firstWhere((chat) => chat?.id == map['message']['chat']['id'])
+          ?.messages
+          ?.add(m);
+    }
     int read = 0;
     print('notification');
     //print(Get.currentRoute);
@@ -224,7 +233,7 @@ Future listenChat(
         player.play('message_recieved.mp3', volume: 0.5);
       }
     } else {
-      if (m.sender.id != currentUser?.id) {
+      if (m.sender.id != currentUser?.id && m.alerted == false) {
         AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
           if (!isAllowed) {
             // Insert here your friendly dialog box before call the request method
@@ -258,7 +267,7 @@ Future listenChat(
             ]);
       }
     }
-
+    await ChatRepository.alertMessage(m, provider);
     ChatRepository.getMessages(chat!, provider, read: read, notify: 0);
 
     provider.setCurrentUser(currentUser!, save: false);
@@ -538,4 +547,76 @@ String formatNumber(String number) {
   } else {
     return "234${number.substring(1)}";
   }
+}
+
+Future<List<String?>> getDeviceDetails() async {
+  String? deviceName;
+  String? deviceVersion;
+  String? identifier;
+
+  final DeviceInfoPlugin deviceInfoPlugin = new DeviceInfoPlugin();
+  try {
+    if (Platform.isAndroid) {
+      var build = await deviceInfoPlugin.androidInfo;
+      deviceName = build.model;
+      deviceVersion = build.version.toString();
+      identifier = build.androidId; //UUID for Android
+    } else if (Platform.isIOS) {
+      var data = await deviceInfoPlugin.iosInfo;
+      deviceName = data.name;
+      deviceVersion = data.systemVersion;
+      identifier = data.identifierForVendor; //UUID for iOS
+    }
+  } on PlatformException {
+    print('Failed to get platform version');
+  }
+
+//if (!mounted) return;
+  return [deviceName, deviceVersion, identifier];
+}
+
+Future<String> getId() async {
+  var deviceInfo = DeviceInfoPlugin();
+  if (Platform.isIOS) {
+    // import 'dart:io'
+    var iosDeviceInfo = await deviceInfo.iosInfo;
+    return iosDeviceInfo.identifierForVendor; // unique ID on iOS
+  } else {
+    var androidDeviceInfo = await deviceInfo.androidInfo;
+    return androidDeviceInfo.androidId; // unique ID on Android
+  }
+}
+
+bool checkBool(dynamic value) {
+  if (value.runtimeType == bool) {
+    return value;
+  } else {
+    return value.toString() == '1' ? true : false;
+  }
+}
+
+String encrypt(plainText, id) {
+  final key = E.Key.fromUtf8("$id$id");
+  final iv = E.IV.fromLength(16);
+
+  final encrypter = E.Encrypter(E.AES(key));
+
+  final encrypted = encrypter.encrypt(plainText, iv: iv);
+
+  return encrypted.base64;
+}
+
+String decrypt(String base64, id) {
+  final key = E.Key.fromUtf8("$id$id");
+  final iv = E.IV.fromLength(16);
+
+  final encrypter = E.Encrypter(E.AES(key));
+
+  final encrypted = E.Encrypted.from64(base64);
+  return encrypter.decrypt(encrypted, iv: iv);
+}
+
+logout(UserProvider provider) {
+  provider.setCurrentUser(null as User);
+  Get.to(LoginScreen());
 }

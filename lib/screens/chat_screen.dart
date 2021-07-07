@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hala_me/config.dart';
 import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
@@ -439,43 +441,68 @@ class _ChatScreenState extends State<ChatScreen> {
               backgroundColor: Color(0xFFF6F6F6),
               appBar: AppBar(
                 brightness: Brightness.dark,
-                centerTitle: true,
-                title: RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                          text: getUserName(pref!, user?.phone_number ?? ''),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          )),
-                      TextSpan(text: '\n'),
-                      widget.chat.typing == true
-                          ? TextSpan(
-                              text: 'Typing...',
+                centerTitle: false,
+                title: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: "${AppConfig.RAW_BASE_URL}${user!.imageUrl}",
+                      imageBuilder: (context, imageProvider) => SizedBox(
+                        height: 35,
+                        width: 35,
+                        child: CircleAvatar(
+                            radius: 35,
+                            backgroundImage:
+                                imageProvider /* AssetImage(
+                                                        chatUser!.imageUrl
+                                                            as String)*/
+                            ),
+                      ),
+                      placeholder: (context, url) => loader(scale: 0.5),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                              text:
+                                  getUserName(pref!, user?.phone_number ?? ''),
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w400,
-                              ),
-                            )
-                          : checkOnline(user!) ?? false
+                              )),
+                          TextSpan(text: '\n'),
+                          widget.chat.typing == true
                               ? TextSpan(
-                                  text: 'Online',
+                                  text: 'Typing...',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 )
-                              : TextSpan(
-                                  text: 'Offline',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                )
-                    ],
-                  ),
+                              : checkOnline(user!) ?? false
+                                  ? TextSpan(
+                                      text: 'Online',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    )
+                                  : TextSpan(
+                                      text: 'Offline',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    )
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 /* leading: IconButton(
                     icon: Icon(Icons.arrow_back_ios),

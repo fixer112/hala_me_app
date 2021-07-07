@@ -18,7 +18,7 @@ Chat _$ChatFromJson(Map<String, dynamic> json) {
             (e) => e == null ? null : User.fromJson(e as Map<String, dynamic>))
         ?.toList(),
     created_at: DateTime.parse(json['created_at'] as String),
-    typing: json['typing'] == null ? false : json['typing'] as bool,
+    typing: json['typing'].toString() == '1' ? true : false,
   );
 }
 

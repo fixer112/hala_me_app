@@ -1,6 +1,9 @@
+import 'package:hala_me/global.dart';
 import 'package:hala_me/models/message_model.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:json_annotation/json_annotation.dart';
+
+import '../global.dart';
 
 part 'chat_model.g.dart';
 
@@ -22,5 +25,3 @@ class Chat {
   factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
   Map<String, dynamic> toJson() => _$ChatToJson(this);
 }
-
-class TextController {}

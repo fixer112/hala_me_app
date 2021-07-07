@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
+import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
 import 'package:hala_me/models/user_model.dart';
@@ -25,7 +26,8 @@ class ChatRepository {
         //'X-Socket-ID': currentSocketId,
       });
       if ([401].contains(res.statusCode)) {
-        Get.off(LoginScreen());
+        logout(provider);
+        return;
       }
       print(res.statusCode);
       print(res.body);
@@ -55,7 +57,7 @@ class ChatRepository {
       //print(res.body);
 
       if ([401].contains(res.statusCode)) {
-        Get.off(LoginScreen());
+        logout(provider);
       }
 
       if ([201, 200].contains(res.statusCode)) {
@@ -114,7 +116,7 @@ class ChatRepository {
       //print(res.body);
 
       if ([401].contains(res.statusCode)) {
-        Get.off(LoginScreen());
+        logout(provider);
       }
 
       if ([201, 200].contains(res.statusCode)) {
@@ -159,5 +161,23 @@ class ChatRepository {
 
     }
     return null as Chat;
+  }
+
+  static Future<Chat?>? alertMessage(Message message, UserProvider provider,
+      {int alerted: 1}) async {
+    User? user = await provider.currentUser();
+
+    if (user?.access_token != null) {
+      var res = await http.post(
+          Uri.parse("${AppConfig.BASE_URL}/message/alert/${message.id}"),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ${user?.access_token}',
+          },
+          body: {
+            'alerted': alerted.toString(),
+          });
+      print(res.statusCode);
+    }
   }
 }

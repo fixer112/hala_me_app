@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 

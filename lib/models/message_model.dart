@@ -1,3 +1,4 @@
+import 'package:hala_me/global.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -16,6 +17,8 @@ class Message {
   bool delivered;
   bool dummy;
   final String uid;
+  bool encrypted;
+  bool alerted;
 
   Message({
     required this.read,
@@ -27,6 +30,8 @@ class Message {
     required this.body,
     this.dummy = false,
     required this.uid,
+    this.encrypted = true,
+    this.alerted = false,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) =>

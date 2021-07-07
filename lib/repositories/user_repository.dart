@@ -15,12 +15,14 @@ import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/screens/chat_screen.dart';
 import 'package:hala_me/screens/home_screen.dart';
 import 'package:hala_me/screens/login_screen.dart';
+import 'package:hala_me/screens/otp_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class UserRepository {
-  static Future<void> login(String number) async {
+  static Future<void> login(String number, {String otp = ''}) async {
+    var id = await getId();
     //String number = "";
 
     /* if (Platform.isIOS) {
@@ -28,17 +30,27 @@ class UserRepository {
     } else {
       number = "2348106813749";
     } */
-    print(number);
+    //print(number);
     var res = await http
         .post(Uri.parse("${AppConfig.BASE_URL}/auth/login"), headers: {
       'Accept': 'application/json',
       //'X-Socket-ID': currentSocketId,
     }, body: {
-      'phone_number': number
+      'phone_number': number,
+      'device_id': id,
+      'otp': otp,
     });
-    print(res.body);
+    print((res.body));
+    //print(jsonDecode(res.body));
     if (![200, 201].contains(res.statusCode)) {
-      return Get.snackbar("", "Invalid number. Start with 234 and 13 digit.");
+      return Get.snackbar(
+          "",
+          /* "Invalid number. Start with 234 and 13 digit." */ jsonDecode(
+              res.body)['message']);
+    }
+    if (res.body == 'otp sent') {
+      Get.off(OTPScreen(number));
+      return;
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
     //print(res.request);
@@ -49,7 +61,7 @@ class UserRepository {
 
     Get.put(UserProvider()).setCurrentUser(currentUser);
     //print(currentUser.chats?[0]?.messages?[0]?.body);
-    Get.to(HomeScreen(
+    Get.off(HomeScreen(
       first: true,
     ));
     //return currentUser;
@@ -63,7 +75,7 @@ class UserRepository {
     //print(user?.access_token);
     //return null as User;
     if (user?.access_token == null) {
-      Get.off(LoginScreen());
+      logout(provider);
     }
     //print(number);
 
@@ -83,7 +95,7 @@ class UserRepository {
     //print(res.body);
 
     if (![200, 201].contains(res.statusCode)) {
-      Get.off(LoginScreen());
+      logout(provider);
       return null as User;
     }
     var map = HashMap<String, dynamic>.from(jsonDecode(res.body));
