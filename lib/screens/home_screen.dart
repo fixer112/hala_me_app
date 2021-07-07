@@ -374,24 +374,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                               )
                                             : BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                boxShadow: [
+                                                /* boxShadow: [
                                                   BoxShadow(
                                                     color: Colors.grey
                                                         .withOpacity(0.5),
                                                     spreadRadius: 1,
                                                     blurRadius: 5,
                                                   ),
-                                                ],
+                                                ], */
                                               ),
                                     child: CachedNetworkImage(
                                       imageUrl:
                                           "${AppConfig.RAW_BASE_URL}${chatUser!.imageUrl}",
                                       imageBuilder: (context, imageProvider) =>
                                           SizedBox(
-                                        height: 35,
-                                        width: 35,
+                                        height: 50,
+                                        width: 50,
                                         child: CircleAvatar(
-                                            radius: 35,
+                                            radius: 40,
                                             backgroundImage:
                                                 imageProvider /* AssetImage(
                                                         chatUser!.imageUrl

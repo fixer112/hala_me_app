@@ -465,7 +465,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       width: 10,
                     ),
                     RichText(
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.start,
                       text: TextSpan(
                         children: [
                           TextSpan(
