@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
+import 'package:hala_me/debouncer.dart';
 import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
@@ -40,6 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? t1;
   Timer? t2;
   static AudioCache player = AudioCache(prefix: 'assets/sounds/');
+  final debouncer = Debouncer(miliseconds: 300);
 
   UserProvider provider = Get.find();
 
@@ -380,24 +382,8 @@ class _ChatScreenState extends State<ChatScreen> {
     controller!.addListener(() async {
       //print(controller?.text);
 
-      t1 = Timer(const Duration(milliseconds: 500), () async {
-        /* channel?.whisper('typing', {
-        'user_id': user!.id,
-        'typing': true,
-        }); */
-        ChatRepository.typing(widget.chat, provider);
-        //var c = initPusher(us!)
-        //var channel = globalEcho!.private('chat.${widget.chat.id.toString()}');
-        // var channel = echos[currentChatPage];
-        // //print('channel: ${channel.}');
-        // //channel.subscribed(() {
-        // print('working');
-        // channel?.whisper('typing', {
-        //   'user_id': user!.id,
-        //   'typing': true,
-        //   // });
-        // });
-      });
+      //t1 = Timer(const Duration(milliseconds: 500), () async {
+      debouncer.run(() => ChatRepository.typing(widget.chat, provider));
     });
   }
 
