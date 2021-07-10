@@ -36,6 +36,10 @@ Future<SharedPreferences> getPref() async {
   return _prefs;
 }
 
+String limitString(String message, int len) {
+  return message.length > len ? "${message.substring(0, len)}..." : message;
+}
+
 String formatDate(DateTime date) {
   final f = new DateFormat('dd-MM-yyyy');
   return f.format(date);
@@ -45,7 +49,13 @@ String formatTime(DateTime date) {
   final f = new DateFormat('hh:mm a').format(date);
   //return f.format(date);
 
-  return chatDate(date) == "Today" ? f : chatDate(date);
+  return f;
+
+  //return chatDate(date) == "Today" ? f : chatDate(date);
+}
+
+String lastChatPeriod(DateTime date) {
+  return chatDate(date) == "Today" ? formatTime(date) : chatDate(date);
 }
 
 String chatDate(DateTime date) {
@@ -247,8 +257,8 @@ Future listenChat(
             content: NotificationContent(
               id: m.chat.id,
               channelKey: 'message_recieved',
-              title: getUserName(pref, m.sender.phone_number),
-              body: m.body,
+              title: limitString(getUserName(pref, m.sender.phone_number), 20),
+              body: limitString(m.body, 30),
               payload: {
                 'chat_id': chat?.id.toString() as String,
                 'message_id': m.id.toString(),

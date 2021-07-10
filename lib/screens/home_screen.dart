@@ -419,8 +419,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                             Row(
                                               children: <Widget>[
                                                 Text(
-                                                  getUserName(pref!,
-                                                      chatUser!.phone_number),
+                                                  limitString(
+                                                      getUserName(
+                                                          pref!,
+                                                          chatUser!
+                                                              .phone_number),
+                                                      20),
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
@@ -447,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                               ],
                                             ),
                                             Text(
-                                              formatTime(message != null
+                                              lastChatPeriod(message != null
                                                   ? message.created_at
                                                   : chat!.created_at),
                                               style: TextStyle(
@@ -487,15 +491,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                                 :  */
                                                         chat?.typing == false
                                                             ? Text(
-                                                                message.body.length >
-                                                                        20
-                                                                    ? message
-                                                                        .body
-                                                                        .substring(
-                                                                            0,
-                                                                            20)
-                                                                    : message
+                                                                limitString(
+                                                                    message
                                                                         .body,
+                                                                    30),
                                                                 style:
                                                                     TextStyle(
                                                                   fontSize: 13,

@@ -380,12 +380,12 @@ class _ChatScreenState extends State<ChatScreen> {
     controller!.addListener(() async {
       //print(controller?.text);
 
-      t1 = Timer(const Duration(milliseconds: 300), () async {
+      t1 = Timer(const Duration(milliseconds: 500), () async {
         /* channel?.whisper('typing', {
         'user_id': user!.id,
         'typing': true,
         }); */
-        await ChatRepository.typing(widget.chat, provider);
+        ChatRepository.typing(widget.chat, provider);
         //var c = initPusher(us!)
         //var channel = globalEcho!.private('chat.${widget.chat.id.toString()}');
         // var channel = echos[currentChatPage];
@@ -469,8 +469,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       text: TextSpan(
                         children: [
                           TextSpan(
-                              text:
+                              text: limitString(
                                   getUserName(pref!, user?.phone_number ?? ''),
+                                  20),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,

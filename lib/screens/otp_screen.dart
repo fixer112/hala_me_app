@@ -26,7 +26,9 @@ class _OTPScreenState extends State<OTPScreen> {
   UserProvider provider = Get.put(UserProvider());
   void _onKeyboardTap(String value) {
     setState(() {
-      text = text + value;
+      if (text.length < 4) {
+        text = text + value;
+      }
     });
   }
 
