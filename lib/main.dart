@@ -10,6 +10,7 @@ import 'package:hala_me/screens/login_screen.dart';
 import 'package:hala_me/screens/otp_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock/wakelock.dart';
 
 import 'screens/home_screen.dart';
 
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Wakelock.enable();
     return GetMaterialApp(
       //navigatorObservers: [routeObserver],
       debugShowCheckedModeBanner: false,
