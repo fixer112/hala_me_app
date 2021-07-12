@@ -524,12 +524,13 @@ Future syncContacts(UserProvider provider) async {
     Map<String, String>? numberName = {};
     validContacts.forEach((contact) {
       contact.phones?.forEach((phone) {
-        numberName.addAll(
+        numberName!.addAll(
             {formatNumber(phone.value ?? ''): "${contact.displayName ?? ''}"});
       });
     });
 
     provider.contacts = validContacts;
+    //numberName = numberName.keys.toSet();
     //if (numberName != {}) {
     pref.remove('numberName');
     pref.setString('numberName', jsonEncode(numberName));

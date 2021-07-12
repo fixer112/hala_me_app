@@ -71,7 +71,7 @@ class ChatRepository {
         user?.chats?.removeWhere((chat) => chat?.id == m.chat.id);
         user?.chats = List.from(user.chats as List<Chat>)..add(chat);
 
-        provider.setCurrentUser(user!, save: false);
+        provider.setCurrentUser(user!);
         //context.read<UserProvider>().setCurrentUser(user!, save: false);
 
         return m;

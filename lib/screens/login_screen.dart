@@ -232,12 +232,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 //print(controller.text);
                                 loading = true;
                                 setState(() {});
-                                try {
-                                  await UserRepository.login(phoneNumber);
-                                } catch (e) {
+                                //try {
+                                //print('test');
+                                await UserRepository.login(phoneNumber);
+                                /* } catch (e) {
                                   print(e);
                                   loading = false;
-                                }
+                                } */
                                 if (mounted) {
                                   loading = false;
                                   setState(() {});

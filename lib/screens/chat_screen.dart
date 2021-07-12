@@ -334,7 +334,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     currentChatPage = widget.chat.id;
-    //print(currentChatPage);
+    print(currentChatPage);
 
     //print(globalEcho?.connector);
     whisperType();
@@ -521,7 +521,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           : widget.chat.id == 0
                               ? widget.chat
                               : currentUser?.chats?.firstWhere(
-                                  (chat) => chat?.id == widget.chat.id) as Chat;
+                                  (chat) => chat?.id == widget.chat.id,
+                                  orElse: null) as Chat;
                       // });
 
                       user = widget.chat.users

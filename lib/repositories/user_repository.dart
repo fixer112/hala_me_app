@@ -42,6 +42,7 @@ class UserRepository {
     });
     print((res.statusCode));
     print((res.body));
+    print((res));
     //print(jsonDecode(res.body));
     if (![200, 201].contains(res.statusCode)) {
       return Get.snackbar(

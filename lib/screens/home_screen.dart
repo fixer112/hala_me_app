@@ -424,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                           pref!,
                                                           chatUser!
                                                               .phone_number),
-                                                      20),
+                                                      15),
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
