@@ -174,6 +174,25 @@ class UserRepository {
     }
   }
 
+  static Future updateFcmToken(UserProvider provider, String token) async {
+    //return;
+    //UserProvider provider = Get.find();
+    User? user = await provider.currentUser();
+
+    if (user?.access_token != null) {
+      var res = await http
+          .put(Uri.parse("${AppConfig.BASE_URL}/update_fcm_token"), headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ${user?.access_token}',
+        //'X-Socket-ID': currentSocketId,
+      }, body: {
+        'token': token
+      });
+
+      print(res.statusCode);
+    }
+  }
+
   static Future<Map<String, dynamic>> checkNumbers(
       UserProvider provider, List<String> numbers) async {
     //return;

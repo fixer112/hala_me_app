@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity/connectivity.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   Map<String, String>? nums = {};
   SharedPreferences? pref;
+  late FirebaseMessaging messaging;
 
   resend() async {
     //print('dummy');
@@ -102,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     //initConnectivity();
+    messaging = FirebaseMessaging.instance;
 
     getUser(provider).then((User user) {
       //print(user.access_token);
@@ -137,6 +140,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //resend(context);
 
     // });
+    messaging.getToken().then((value) {
+      print("FCM token $value");
+      UserRepository.updateFcmToken(provider, value!);
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage event) {
+      print(event.notification?.title);
+      print(event.notification?.body);
+      // print(event.data['sender']);
+      // print(jsonDecode(event.data['sender']));
+      print('Front');
+      var data = event.data;
+      data['sender'] = jsonDecode(event.data['sender']);
+      data['chat'] = jsonDecode(event.data['chat']);
+      //print(data['sender'].runtimeType);
+
+      messageCreatedAlert(data);
+    });
+
     super.initState();
   }
 
@@ -385,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                               ),
                                     child: CachedNetworkImage(
                                       imageUrl:
-                                          "${AppConfig.RAW_BASE_URL}${chatUser!.imageUrl}",
+                                          "${AppConfig.RAW_BASE_URL}/${chatUser!.imageUrl}",
                                       imageBuilder: (context, imageProvider) =>
                                           SizedBox(
                                         height: 50,

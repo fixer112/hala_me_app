@@ -201,7 +201,6 @@ Future listenChat(
     Echo echo, int id, UserProvider provider, BuildContext context) async {
   //echo.socket.on();
   //UserProvider provider = Get.find();
-  AudioCache player = AudioCache(prefix: 'assets/sounds/');
 
   User? currentUser = await provider.currentUser();
   //await context.read<UserProvider>().currentUser();
@@ -217,75 +216,7 @@ Future listenChat(
 
   channel.listen('MessageCreated', (Map<String, dynamic> message) async {
     var map = HashMap.from(message);
-    // Map<String, String> mC =
-    //     map.map((key, value) => MapEntry(key.toString(), value.toString()));
-    //print('working');
-    //print(map['message']);
-    var m = Message.fromJson(map['message']);
-    var chat = currentUser?.chats
-        ?.firstWhere((chat) => chat?.id == map['message']['chat']['id']);
-    var messages = currentUser?.chats
-        ?.firstWhere((chat) => chat?.id == map['message']['chat']['id'])
-        ?.messages;
-    if (messages!.where((msg) => msg?.uid == m.uid).isEmpty) {
-      currentUser?.chats
-          ?.firstWhere((chat) => chat?.id == map['message']['chat']['id'])
-          ?.messages
-          ?.add(m);
-    }
-    int read = 0;
-    print('notification');
-    //print(Get.currentRoute);
-    print(currentChatPage);
-    if (currentChatPage == id) {
-      read = 1;
-      if (m.sender.id != currentUser?.id) {
-        player.play('message_recieved.mp3', volume: 0.5);
-      }
-    } else {
-      if (m.sender.id != currentUser?.id && m.alerted == false) {
-        AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-          if (!isAllowed) {
-            // Insert here your friendly dialog box before call the request method
-            // This is very important to not harm the user experience
-            AwesomeNotifications().requestPermissionToSendNotifications();
-          }
-        });
-        var pref = await getPref();
-        //print(chat?.id);
-        AwesomeNotifications().createNotification(
-            content: NotificationContent(
-              id: m.chat.id,
-              channelKey: 'message_recieved',
-              title: limitString(getUserName(pref, m.sender.phone_number), 20),
-              body: limitString(m.body, 30),
-              payload: {
-                'chat_id': chat?.id.toString() as String,
-                'message_id': m.id.toString(),
-                'user_id': m.sender.id.toString(),
-              },
-            ),
-            actionButtons: [
-              NotificationActionButton(
-                key: 'REPLY',
-                label: 'Reply',
-                autoCancel: true,
-                buttonType: ActionButtonType.InputField,
-              ),
-              NotificationActionButton(
-                  key: 'READ', label: 'Mark as read', autoCancel: true),
-            ]);
-      }
-    }
-    await ChatRepository.alertMessage(m, provider);
-    ChatRepository.getMessages(chat!, provider, read: read, notify: 0);
-
-    provider.setCurrentUser(currentUser!, save: false);
-    provider.update();
-
-    /* Provider.of<UserProvider>(context, listen: false)
-        .setCurrentUser(currentUser!); */
-    //print("body ${currentUser.chats?[0]?.messages?.last?.read}");
+    messageCreatedAlert(map['message']);
   }).listen('ChatLoaded', (Map<String, dynamic> message) {
     var map = HashMap.from(message);
     print(map['chat']);
@@ -630,4 +561,78 @@ String decrypt(String base64, id) {
 logout(UserProvider provider) {
   provider.setCurrentUser(null as User);
   Get.to(LoginScreen());
+}
+
+messageCreatedAlert(Map<String, dynamic> message) async {
+  AudioCache player = AudioCache(prefix: 'assets/sounds/');
+
+  var provider = Get.put(UserProvider());
+  var currentUser = await provider.currentUser();
+  //var map = HashMap.from(message);
+  // Map<String, String> mC =
+  //     map.map((key, value) => MapEntry(key.toString(), value.toString()));
+  //print('working');
+  //print(map['message']);
+  var m = Message.fromJson(message);
+  var chat = currentUser?.chats
+      ?.firstWhere((chat) => chat?.id == message['chat']['id']);
+  var messages = currentUser?.chats
+      ?.firstWhere((chat) => chat?.id == message['chat']['id'])
+      ?.messages;
+  if (messages!.where((msg) => msg?.uid == m.uid).isEmpty &&
+      m.sender.id != currentUser?.id) {
+    currentUser?.chats
+        ?.firstWhere((chat) => chat?.id == message['chat']['id'])
+        ?.messages
+        ?.add(m);
+
+    int read = 0;
+    print("current $currentChatPage");
+    print("${m.sender.id} ${currentUser?.id}");
+    if (currentChatPage == m.chat.id) {
+      read = 1;
+      if (m.sender.id != currentUser?.id) {
+        player.play('message_recieved.mp3', volume: 0.5);
+      }
+    } else {
+      if (m.sender.id != currentUser?.id /* && m.alerted == false */) {
+        AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+          if (!isAllowed) {
+            // Insert here your friendly dialog box before call the request method
+            // This is very important to not harm the user experience
+            AwesomeNotifications().requestPermissionToSendNotifications();
+          }
+        });
+        var pref = await getPref();
+        //print(chat?.id);
+        AwesomeNotifications().createNotification(
+            content: NotificationContent(
+              id: m.chat.id,
+              channelKey: 'message_recieved',
+              title: limitString(getUserName(pref, m.sender.phone_number), 20),
+              body: limitString(m.body, 30),
+              payload: {
+                'chat_id': chat?.id.toString() as String,
+                'message_id': m.id.toString(),
+                'user_id': m.sender.id.toString(),
+              },
+            ),
+            actionButtons: [
+              NotificationActionButton(
+                key: 'REPLY',
+                label: 'Reply',
+                autoCancel: true,
+                buttonType: ActionButtonType.InputField,
+              ),
+              NotificationActionButton(
+                  key: 'READ', label: 'Mark as read', autoCancel: true),
+            ]);
+      }
+    }
+    await ChatRepository.alertMessage(m, provider);
+    ChatRepository.getMessages(chat!, provider, read: read, notify: 0);
+
+    provider.setCurrentUser(currentUser!, save: false);
+    provider.update();
+  }
 }

@@ -432,7 +432,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CachedNetworkImage(
-                      imageUrl: "${AppConfig.RAW_BASE_URL}${user!.imageUrl}",
+                      imageUrl: "${AppConfig.RAW_BASE_URL}/${user!.imageUrl}",
                       imageBuilder: (context, imageProvider) => SizedBox(
                         height: 35,
                         width: 35,

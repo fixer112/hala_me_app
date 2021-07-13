@@ -51,6 +51,9 @@ dependencies:
   cached_network_image: ^3.0.0
   numeric_keyboard: ^1.1.0
   wakelock: ^0.5.2
+  firebase_analytics: ^8.0.2
+  firebase_core: ^1.1.0
+  firebase_messaging: ^10.0.0
 
 dev_dependencies:
   flutter_test:

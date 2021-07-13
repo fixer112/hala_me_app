@@ -10,7 +10,7 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
   return Message(
     read: json['read'].toString() == '1' ? true : false,
     delivered: json['delivered'].toString() == '1' ? true : false,
-    id: json['id'] as int,
+    id: int.parse(json['id'].toString()),
     sender: User.fromJson(json['sender'] as Map<String, dynamic>),
     chat: Chat.fromJson(json['chat'] as Map<String, dynamic>),
     created_at: DateTime.parse(json['created_at'] as String),

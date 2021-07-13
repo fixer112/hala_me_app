@@ -1,10 +1,14 @@
 // @dart=2.9
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hala_me/global.dart';
 import 'package:hala_me/provider/user_provider.dart';
 import 'package:hala_me/screens/login_screen.dart';
 import 'package:hala_me/screens/otp_screen.dart';
@@ -20,8 +24,23 @@ void _enablePlatformOverrideForDesktop() {
   }
 }
 
+Future<void> _messageHandler(RemoteMessage event) async {
+  await Firebase?.initializeApp();
+  //print('background message ${event.notification?.body}');
+  // print(event.notification?.title);
+  // print(event.notification?.body);
+  // print(event.data);
+  // print('Back');
+  var data = event.data;
+  data['sender'] = jsonDecode(event.data['sender']);
+  data['chat'] = jsonDecode(event.data['chat']);
+  messageCreatedAlert(data);
+}
+
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   _enablePlatformOverrideForDesktop();
+  FirebaseMessaging.onBackgroundMessage(_messageHandler);
   AwesomeNotifications().initialize(
       // set the icon to null if you want to use the default app icon
       //'resource://drawable/res_app_icon',
@@ -42,6 +61,7 @@ Future<void> main() async {
     }
   });
 
+  await Firebase?.initializeApp();
   runApp(
     MyApp(),
     /* MultiProvider(providers: [
