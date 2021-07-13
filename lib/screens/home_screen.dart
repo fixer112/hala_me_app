@@ -135,6 +135,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
         syncContacts(provider);
         timer = Timer.periodic(new Duration(minutes: 2), (timer) => resend());
+        messaging.getToken().then((value) {
+          print("FCM token $value");
+          UserRepository.updateFcmToken(provider, value!);
+        });
       }
     });
     //WidgetsBinding.instance!.addPostFrameCallback((_) => resend(context));
@@ -142,10 +146,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //resend(context);
 
     // });
-    messaging.getToken().then((value) {
-      print("FCM token $value");
-      UserRepository.updateFcmToken(provider, value!);
-    });
 
     FirebaseMessaging.onMessage.listen((RemoteMessage event) {
       print(event.notification?.title);
@@ -355,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               )
                               .toList();
 
-                          //print("${chatUser!.imageUrl}");
+                          // print(
+                          //     "${AppConfig.RAW_BASE_URL}/${chatUser!.imageUrl}");
 
                           //print(unreads.isNotEmpty ? unreads.first.read : 0);
                           return GestureDetector(

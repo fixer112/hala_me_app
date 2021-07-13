@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  static const bool HTTPS = kReleaseMode;
+  static const bool release = kReleaseMode;
+  static const bool HTTPS = release;
 
-  static const DOMAIN_PATH =
-      kReleaseMode ? "hala.altechtic.com" : "10.0.2.2:8000";
+  static const DOMAIN_PATH = release ? "hala.altechtic.com" : "10.0.2.2:8000";
 
   static const String API_ENDPATH = "api/v1";
   static const String PUBLIC_FOLDER = "public";
