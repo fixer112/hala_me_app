@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -62,6 +65,9 @@ Future<void> main() async {
   });
 
   await Firebase?.initializeApp();
+  await FirebaseCrashlytics.instance
+      .setCrashlyticsCollectionEnabled(kReleaseMode);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   runApp(
     MyApp(),
     /* MultiProvider(providers: [
@@ -74,6 +80,7 @@ Future<void> main() async {
 //final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class MyApp extends StatelessWidget {
+  FirebaseAnalytics analytics = FirebaseAnalytics();
   // This widget is the root of your application.
 
   @override
@@ -87,6 +94,9 @@ class MyApp extends StatelessWidget {
         primaryColor: primaryColor,
       ),
       home: /* OTPScreen('2348106813749') */ LoginScreen(force: false),
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: analytics),
+      ],
     );
   }
 }

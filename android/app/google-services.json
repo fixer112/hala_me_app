@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "781034430617",
+    "project_id": "hala-me-8361a",
+    "storage_bucket": "hala-me-8361a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781034430617:android:b47dd6f31b5a3323f11808",
+        "android_client_info": {
+          "package_name": "com.altechtic.hala_me"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "781034430617-djq16vnt74jcalb74um5jn02h7829cgo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzKyPEV6HOzdmHd_BkA2NLgAFJ7G07Dkg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "781034430617-djq16vnt74jcalb74um5jn02h7829cgo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
