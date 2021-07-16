@@ -68,6 +68,7 @@ Future<void> main() async {
   await FirebaseCrashlytics.instance
       .setCrashlyticsCollectionEnabled(kReleaseMode);
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+  //FirebaseCrashlytics.instance.crash();
   runApp(
     MyApp(),
     /* MultiProvider(providers: [

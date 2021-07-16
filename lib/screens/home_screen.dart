@@ -9,6 +9,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
 import 'package:hala_me/global.dart';
@@ -44,6 +45,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   SharedPreferences? pref;
   late FirebaseMessaging messaging;
 
+  List<Chat> pressedChats = [];
+
+  List<int> deleting = [];
+
   resend() async {
     //print('dummy');
 
@@ -69,7 +74,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       int userId = int.parse(payload['user_id'] as String);
       Chat chat = u?.chats?.firstWhere((chat) => chat?.id == chatId) as Chat;
       //print(chat.id);
-
       if (!StringUtils.isNullOrEmpty(receivedNotification.buttonKeyInput)) {
         var m = Message(
           read: false,
@@ -91,10 +95,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           receivedNotification.buttonKeyPressed == 'READ') {
         await ChatRepository.getMessages(chat, provider);
         return;
+      } else {
+        Get.to(ChatScreen(chat: chat));
       }
       //else {
       //print('work');
-      Get.to(ChatScreen(chat: chat));
     }
 
         // your page params. I recommend to you to pass all *receivedNotification* object
@@ -272,14 +277,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           brightness: Brightness.dark,
           elevation: 8,
           leading: null,
-          title: Text(
-            "Hala Me",
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ),
+          title: pressedChats.isNotEmpty
+              ? Text(pressedChats.length.toString())
+              : Text(
+                  "Hala Me",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
           actions: <Widget>[
-            IconButton(
+            pressedChats.isEmpty
+                ? Container()
+                : Row(
+                    children: [
+                      deleting.isNotEmpty
+                          ? loader(scale: 0.4, color: Colors.white)
+                          : IconButton(
+                              onPressed: () async {
+                                var user =
+                                    await Get.put(UserProvider()).currentUser();
+                                deleting = pressedChats
+                                    .map((c) => c.id)
+                                    .toSet()
+                                    .toList();
+                                setState(() {});
+                                pressedChats.forEach((c) async {
+                                  var u = c.users
+                                      ?.firstWhere((e) => e?.id != user?.id);
+                                  print(u!.id);
+                                  await ChatRepository.deleteChat(
+                                      u.id, provider);
+                                });
+                                pressedChats = [];
+                                deleting = [];
+                              },
+                              icon: Icon(Icons.delete),
+                              color: Colors.white,
+                            ),
+                    ],
+                  ),
+            /* IconButton(
               icon: Icon(Icons.logout),
               color: Colors.white,
               onPressed: () async {
@@ -288,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 provider.setCurrentUser(null as User);
                 logout(provider);
               },
-            ),
+            ), */
           ],
         ),
         body: GetBuilder<UserProvider>(
@@ -322,12 +359,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   return bD!.compareTo(aD!);
                 });
 
-                return currentUser?.chats == null
+                var chats = currentUser?.chats
+                    ?.where((c) => c?.messages?.isNotEmpty as bool)
+                    .toList();
+
+                return chats == null
                     ? Container()
                     : ListView.builder(
-                        itemCount: currentUser?.chats?.length,
+                        itemCount: chats.length,
                         itemBuilder: (BuildContext context, int index) {
-                          Chat? chat = currentUser?.chats?[index];
+                          Chat? chat = chats[index];
                           //print(chat?.typing);
                           //print(jsonEncode(chat));
                           User? chatUser = chat?.users?.firstWhere(
@@ -359,226 +400,306 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           //     "${AppConfig.RAW_BASE_URL}/${chatUser!.imageUrl}");
 
                           //print(unreads.isNotEmpty ? unreads.first.read : 0);
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  chat: chat!,
+                          return Container(
+                            margin: EdgeInsets.symmetric(vertical: 1),
+                            padding: EdgeInsets.symmetric(vertical: 3),
+                            color: !pressedChats.contains(chat)
+                                ? Colors.transparent
+                                : primaryColor.withAlpha(50),
+                            child: Slidable(
+                                actionPane: SlidableDrawerActionPane(),
+                                actionExtentRatio: 0.1,
+                                //showAllActionsThreshold: 0.1,
+                                //dismissal: SlidableDismissal(),
+                                actions: [
+                                  /* IconButton(
+                                      onPressed: () {
+                                        if (mounted) {
+                                          Slidable.of(context)?.close();
+                                        }
+                                      },
+                                      icon: Icon(
+                                        Icons.reply,
+                                        color: primaryColor,
+                                      )) */
+                                ],
+                                secondaryActions: [
+                                  deleting.contains(chat!.id)
+                                      ? loader(scale: 0.4)
+                                      : IconButton(
+                                          onPressed: deleting.contains(chat!.id)
+                                              ? null
+                                              : () async {
+                                                  var u = chat.users
+                                                      ?.firstWhere((e) =>
+                                                          e?.id !=
+                                                          currentUser?.id);
+                                                  deleting.add(chat!.id);
+                                                  setState(() {});
+                                                  await ChatRepository
+                                                      .deleteChat(
+                                                          u!.id, provider);
+
+                                                  deleting.removeWhere(
+                                                      (id) => id == chat.id);
+                                                  if (mounted) {
+                                                    Slidable.of(context)
+                                                        ?.close();
+                                                    setState(() {});
+                                                  }
+                                                },
+                                          icon: Icon(
+                                            Icons.delete,
+                                            color: primaryColor,
+                                          ))
+                                ],
+                                child: InkWell(
+                                  onLongPress: () {
+                                    pressedChats.add(chat);
+                                    setState(() {});
+                                  },
+                                  onTap: () {
+                                    if (pressedChats.isNotEmpty) {
+                                      pressedChats.contains(chat)
+                                          ? pressedChats
+                                              .removeWhere((c) => chat == c)
+                                          : pressedChats.add(chat);
+                                      setState(() {});
+                                    } else {
+                                      Get.to(
+                                        ChatScreen(
+                                          chat: chat,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 15,
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          padding: EdgeInsets.all(2),
+                                          decoration: (uLm?.read ==
+                                                  false) //chat.unread
+                                              ? BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(40)),
+                                                  border: Border.all(
+                                                    width: 2,
+                                                    color: Theme.of(context)
+                                                        .primaryColor,
+                                                  ),
+                                                  // shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.grey
+                                                          .withOpacity(0.5),
+                                                      spreadRadius: 1,
+                                                      blurRadius: 5,
+                                                    ),
+                                                  ],
+                                                )
+                                              : BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  /* boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey
+                                      .withOpacity(0.5),
+                                  spreadRadius: 1,
+                                  blurRadius: 5,
                                 ),
-                              ),
-                            ),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 15,
-                              ),
-                              child: Row(
-                                children: <Widget>[
-                                  Container(
-                                    padding: EdgeInsets.all(2),
-                                    decoration:
-                                        (uLm?.read == false) //chat.unread
-                                            ? BoxDecoration(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(40)),
-                                                border: Border.all(
-                                                  width: 2,
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
+                              ], */
                                                 ),
-                                                // shape: BoxShape.circle,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.grey
-                                                        .withOpacity(0.5),
-                                                    spreadRadius: 1,
-                                                    blurRadius: 5,
+                                          child: CachedNetworkImage(
+                                            imageUrl:
+                                                "${AppConfig.RAW_BASE_URL}/${chatUser!.imageUrl}",
+                                            imageBuilder:
+                                                (context, imageProvider) =>
+                                                    SizedBox(
+                                              height: 50,
+                                              width: 50,
+                                              child: CircleAvatar(
+                                                  radius: 40,
+                                                  backgroundImage:
+                                                      imageProvider /* AssetImage(
+                                      chatUser!.imageUrl
+                                          as String)*/
+                                                  ),
+                                            ),
+                                            placeholder: (context, url) =>
+                                                loader(scale: 0.5),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Icon(Icons.error),
+                                          ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.65,
+                                          padding: EdgeInsets.only(
+                                            left: 20,
+                                          ),
+                                          child: Column(
+                                            children: <Widget>[
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: <Widget>[
+                                                  Row(
+                                                    children: <Widget>[
+                                                      Text(
+                                                        limitString(
+                                                            getUserName(
+                                                                pref!,
+                                                                chatUser!
+                                                                    .phone_number),
+                                                            15),
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      checkOnline(chatUser)
+                                                          ? Container(
+                                                              margin:
+                                                                  const EdgeInsets
+                                                                          .only(
+                                                                      left: 5),
+                                                              width: 7,
+                                                              height: 7,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .primaryColor,
+                                                              ),
+                                                            )
+                                                          : Container(
+                                                              child: null,
+                                                            ),
+                                                    ],
+                                                  ),
+                                                  Text(
+                                                    lastChatPeriod(
+                                                        message != null
+                                                            ? message.created_at
+                                                            : chat!.created_at),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w300,
+                                                      color: Colors.black54,
+                                                    ),
                                                   ),
                                                 ],
-                                              )
-                                            : BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                /* boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.grey
-                                                        .withOpacity(0.5),
-                                                    spreadRadius: 1,
-                                                    blurRadius: 5,
-                                                  ),
-                                                ], */
                                               ),
-                                    child: CachedNetworkImage(
-                                      imageUrl:
-                                          "${AppConfig.RAW_BASE_URL}/${chatUser!.imageUrl}",
-                                      imageBuilder: (context, imageProvider) =>
-                                          SizedBox(
-                                        height: 50,
-                                        width: 50,
-                                        child: CircleAvatar(
-                                            radius: 40,
-                                            backgroundImage:
-                                                imageProvider /* AssetImage(
-                                                        chatUser!.imageUrl
-                                                            as String)*/
-                                            ),
-                                      ),
-                                      placeholder: (context, url) =>
-                                          loader(scale: 0.5),
-                                      errorWidget: (context, url, error) =>
-                                          Icon(Icons.error),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.65,
-                                    padding: EdgeInsets.only(
-                                      left: 20,
-                                    ),
-                                    child: Column(
-                                      children: <Widget>[
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: <Widget>[
-                                            Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  limitString(
-                                                      getUserName(
-                                                          pref!,
-                                                          chatUser!
-                                                              .phone_number),
-                                                      15),
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                checkOnline(chatUser)
-                                                    ? Container(
-                                                        margin: const EdgeInsets
-                                                            .only(left: 5),
-                                                        width: 7,
-                                                        height: 7,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .primaryColor,
-                                                        ),
-                                                      )
-                                                    : Container(
-                                                        child: null,
+                                              SizedBox(
+                                                height: 10,
+                                              ),
+                                              message != null
+                                                  ? Container(
+                                                      alignment:
+                                                          Alignment.topLeft,
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              message.sender
+                                                                          .id ==
+                                                                      currentUser
+                                                                          ?.id
+                                                                  ? Container(
+                                                                      child: statusIcon(
+                                                                          message),
+                                                                    )
+                                                                  : Container(),
+                                                              SizedBox(
+                                                                width: 5,
+                                                              ),
+                                                              /* (chat?.typing == null
+                                              ? true
+                                              :  */
+                                                              chat?.typing ==
+                                                                      false
+                                                                  ? Text(
+                                                                      limitString(
+                                                                          message
+                                                                              .body,
+                                                                          30),
+                                                                      style:
+                                                                          TextStyle(
+                                                                        fontSize:
+                                                                            13,
+                                                                        color: Colors
+                                                                            .black54,
+                                                                      ),
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                      maxLines:
+                                                                          2,
+                                                                    )
+                                                                  : Text(
+                                                                      'Typing...',
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.green),
+                                                                    ),
+                                                            ],
+                                                          ),
+                                                          unreads.isNotEmpty
+                                                              ? Container(
+                                                                  height: 20,
+                                                                  width: 20,
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .primaryColor,
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(20)),
+                                                                  ),
+                                                                  child: Center(
+                                                                    child: Text(
+                                                                      unreads
+                                                                          .length
+                                                                          .toString(),
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                              : Container()
+                                                        ],
                                                       ),
-                                              ],
-                                            ),
-                                            Text(
-                                              lastChatPeriod(message != null
-                                                  ? message.created_at
-                                                  : chat!.created_at),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w300,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
                                         ),
-                                        SizedBox(
-                                          height: 10,
-                                        ),
-                                        message != null
-                                            ? Container(
-                                                alignment: Alignment.topLeft,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        message.sender.id ==
-                                                                currentUser?.id
-                                                            ? Container(
-                                                                child:
-                                                                    statusIcon(
-                                                                        message),
-                                                              )
-                                                            : Container(),
-                                                        SizedBox(
-                                                          width: 5,
-                                                        ),
-                                                        /* (chat?.typing == null
-                                                                ? true
-                                                                :  */
-                                                        chat?.typing == false
-                                                            ? Text(
-                                                                limitString(
-                                                                    message
-                                                                        .body,
-                                                                    30),
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize: 13,
-                                                                  color: Colors
-                                                                      .black54,
-                                                                ),
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                maxLines: 2,
-                                                              )
-                                                            : Text(
-                                                                'Typing...',
-                                                                style: TextStyle(
-                                                                    color: Colors
-                                                                        .green),
-                                                              ),
-                                                      ],
-                                                    ),
-                                                    unreads.isNotEmpty
-                                                        ? Container(
-                                                            height: 20,
-                                                            width: 20,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .primaryColor,
-                                                              borderRadius: BorderRadius
-                                                                  .all(Radius
-                                                                      .circular(
-                                                                          20)),
-                                                            ),
-                                                            child: Center(
-                                                              child: Text(
-                                                                unreads.length
-                                                                    .toString(),
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          )
-                                                        : Container()
-                                                  ],
-                                                ),
-                                              )
-                                            : Container(),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                )),
                           );
                         },
                       );

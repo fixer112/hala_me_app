@@ -19,6 +19,7 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
     uid: json['uid'] as String,
     encrypted: json['encrypted'].toString() == '1' ? true : false,
     alerted: json['alerted'].toString() == '1' ? true : false,
+    hidden: json['hidden'].toString() == '1' ? true : false,
   );
 }
 
@@ -34,4 +35,5 @@ Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
       'uid': instance.uid,
       'encrypted': instance.encrypted,
       'alerted': instance.alerted,
+      'hidden': instance.hidden,
     };

@@ -9,6 +9,7 @@ import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/message_model.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
+import 'package:hala_me/repositories/user_repository.dart';
 import 'package:hala_me/screens/login_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +31,7 @@ class ChatRepository {
         return;
       }
       print(res.statusCode);
-      print(res.body);
+      //print(res.body);
     }
   }
 
@@ -54,7 +55,7 @@ class ChatRepository {
             'uid': message.uid,
           });
       print(res.statusCode);
-      //print(res.body);
+      ////print(res.body);
 
       if ([401].contains(res.statusCode)) {
         logout(provider);
@@ -72,7 +73,7 @@ class ChatRepository {
         user?.chats = List.from(user.chats as List<Chat>)..add(chat);
 
         provider.setCurrentUser(user!);
-        //context.read<UserProvider>().setCurrentUser(user!, save: false);
+        //context.read<UserProvider>().setCurrentUser(user!, save: true);
 
         return m;
       }
@@ -113,7 +114,7 @@ class ChatRepository {
             //'X-Socket-ID': currentSocketId,
           });
       print(res.statusCode);
-      //print(res.body);
+      ////print(res.body);
 
       if ([401].contains(res.statusCode)) {
         logout(provider);
@@ -128,15 +129,15 @@ class ChatRepository {
         Chat? chat = user?.chats?.firstWhere((chat) => chat?.id == c.id,
             orElse: () => null as Chat);
 
-        var msgs =
-            chat?.messages?.where((message) => message?.dummy == true).toList();
+        var msgs = chat
+            ?.messages; //?.where((message) => message?.dummy == true).toList();
 
         msgs?.forEach((m) {
-          var con = c?.messages?.firstWhere((message) => m?.uid == message?.uid,
+          var con = c.messages?.firstWhere((message) => m?.uid == message?.uid,
               orElse: () => null as Message);
 
           if (con == null) {
-            c?.messages?.add(m);
+            c.messages?.add(m);
             //user?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
           }
         });
@@ -152,7 +153,7 @@ class ChatRepository {
 
         //print(c.messages?[0]?.read);
         provider.setCurrentUser(user!);
-        //context.read<UserProvider>().setCurrentUser(user!, save: false);
+        //context.read<UserProvider>().setCurrentUser(user!, save: true);
 
         return c;
       }
@@ -163,7 +164,7 @@ class ChatRepository {
     return null as Chat;
   }
 
-  static Future<Chat?>? alertMessage(Message message, UserProvider provider,
+  static alertMessage(Message message, UserProvider provider,
       {int alerted: 1}) async {
     User? user = await provider.currentUser();
 
@@ -178,6 +179,45 @@ class ChatRepository {
             'alerted': alerted.toString(),
           });
       print(res.statusCode);
+    }
+  }
+
+  static deleteMessages(
+      Chat chat, List<String> ids, UserProvider provider) async {
+    User? user = await provider.currentUser();
+
+    if (user?.access_token != null) {
+      var res = await http
+          .delete(Uri.parse("${AppConfig.BASE_URL}/messages/delete"), headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ${user?.access_token}',
+      }, body: {
+        'ids': jsonEncode(ids.isNotEmpty ? ids : ['']),
+      });
+      print(res.statusCode);
+      //print(res.body);
+      if (res.statusCode == 200) {
+        getMessages(chat, provider);
+      }
+    }
+  }
+
+  static deleteChat(int id, UserProvider provider) async {
+    User? user = await provider.currentUser();
+
+    if (user?.access_token != null) {
+      var res = await http.delete(
+          Uri.parse("${AppConfig.BASE_URL}/chat/delete/${id.toString()}"),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ${user?.access_token}',
+          },
+          body: {});
+      print(res.statusCode);
+      //print(res.body);
+      if (res.statusCode == 200) {
+        UserRepository.fetchUser(provider);
+      }
     }
   }
 }

@@ -19,6 +19,7 @@ class Message {
   final String uid;
   bool encrypted;
   bool alerted;
+  bool hidden;
 
   Message({
     required this.read,
@@ -32,6 +33,7 @@ class Message {
     required this.uid,
     this.encrypted = true,
     this.alerted = false,
+    this.hidden = false,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) =>

@@ -42,7 +42,7 @@ class UserRepository {
     });
     print((res.statusCode));
     print((res.body));
-    print((res));
+    //print((res));
     //print(jsonDecode(res.body));
     if (![200, 201].contains(res.statusCode)) {
       return Get.snackbar(
@@ -95,7 +95,7 @@ class UserRepository {
 
     //print(access_token);
     print(res.statusCode);
-    //print(res.body);
+    ////print(res.body);
 
     if (![200, 201].contains(res.statusCode)) {
       logout(provider);
@@ -110,8 +110,8 @@ class UserRepository {
 
     if (user != null) {
       var dummys = user.chats?.map((chat) {
-        var msg =
-            chat?.messages?.where((message) => message?.dummy == true).toList();
+        var msg = chat
+            ?.messages; //?.where((message) => message?.dummy == true).toList();
         // .map((m) => m?.uid)
         // .toList();
         return msg;

@@ -256,7 +256,7 @@ Future listenChat(
     });
 
         */
-    provider.setCurrentUser(currentUser!, save: false);
+    provider.setCurrentUser(currentUser!, save: true);
     provider.update();
     ChatRepository.getMessages(chat!, provider, read: 0, notify: 0);
     /* Provider.of<UserProvider>(context, listen: false)
@@ -273,14 +273,14 @@ Future listenChat(
       currentUser?.chats = List.from(currentUser.chats as List<Chat>)
         ..add(chat);
 
-      provider.setCurrentUser(currentUser!, save: false);
+      provider.setCurrentUser(currentUser!, save: true);
       Timer(const Duration(milliseconds: 900), () {
         currentUser.chats?.removeWhere((chat) => id == chat?.id);
         chat?.typing = false;
         currentUser.chats = List.from(currentUser.chats as List<Chat>)
           ..add(chat);
 
-        provider.setCurrentUser(currentUser, save: false);
+        provider.setCurrentUser(currentUser, save: true);
       });
     }
   });
@@ -314,7 +314,7 @@ Future<void> listenOnline(
           ?..online = map['user']['online'] == 1 ? true : false
           ..updated_at = DateTime.parse(map['user']['updated_at'] as String);
 
-    provider.setCurrentUser(currentUser!, save: false);
+    provider.setCurrentUser(currentUser!, save: true);
     provider.update();
     /* Provider.of<UserProvider>(context, listen: false)
         .setCurrentUser(currentUser!); */
@@ -632,7 +632,7 @@ messageCreatedAlert(Map<String, dynamic> message) async {
     await ChatRepository.alertMessage(m, provider);
     ChatRepository.getMessages(chat!, provider, read: read, notify: 0);
 
-    provider.setCurrentUser(currentUser!, save: false);
+    provider.setCurrentUser(currentUser!, save: true);
     provider.update();
   }
 }

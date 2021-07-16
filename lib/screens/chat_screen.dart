@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
 import 'package:hala_me/debouncer.dart';
@@ -41,7 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? t1;
   Timer? t2;
   static AudioCache player = AudioCache(prefix: 'assets/sounds/');
-  final debouncer = Debouncer(miliseconds: 300);
+  final debouncer = Debouncer(miliseconds: 700);
 
   UserProvider provider = Get.find();
 
@@ -56,185 +57,126 @@ class _ChatScreenState extends State<ChatScreen> {
 
   SharedPreferences? pref;
 
+  List<String> deleting = [];
+
+  List<Message> pressedMessages = [];
+
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
     //print(message.delivered);
-    return isMe
-        ? Column(
-            children: <Widget>[
-              Container(
-                alignment: Alignment.topRight,
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.80,
-                  ),
-                  padding: EdgeInsets.all(10),
-                  margin: EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.body,
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 2,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          statusIcon(message),
-                          Text(
-                            formatTime(message.created_at),
-                            style: TextStyle(
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+    return /* isMe
+        ?  */
+        Slidable(
+      actionPane: SlidableDrawerActionPane(),
+      actionExtentRatio: 0.1,
+      //showAllActionsThreshold: 0.1,
+      //dismissal: SlidableDismissal(),
+      actions: [
+        IconButton(
+            onPressed: () {
+              if (mounted) {
+                Slidable.of(context)?.close();
+              }
+            },
+            icon: Icon(
+              Icons.reply,
+              color: primaryColor,
+            ))
+      ],
+      secondaryActions: [
+        deleting.contains(message.uid)
+            ? loader(scale: 0.4)
+            : !isMe
+                ? Container()
+                : IconButton(
+                    onPressed: deleting.contains(message.uid)
+                        ? null
+                        : () async {
+                            deleting.add(message.uid);
+                            setState(() {});
+                            await ChatRepository.deleteMessages(
+                                widget.chat, [message.uid], provider);
+
+                            deleting.removeWhere((id) => id == message.uid);
+                            if (mounted) {
+                              Slidable.of(context)?.close();
+                              setState(() {});
+                            }
+                          },
+                    icon: Icon(
+                      Icons.delete,
+                      color: primaryColor,
+                    ))
+      ],
+      child: InkWell(
+        onLongPress: () {
+          pressedMessages.add(message);
+          setState(() {});
+        },
+        onTap: () {
+          if (pressedMessages.isNotEmpty) {
+            pressedMessages.contains(message)
+                ? pressedMessages.removeWhere((msg) => message.uid == msg.uid)
+                : pressedMessages.add(message);
+            setState(() {});
+          }
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              alignment: Alignment.topRight,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.80,
                 ),
-              ),
-              /* !isSameUser
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: <Widget>[
-                    Text(
-                      formatDate(message.created_at),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black45,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundImage: AssetImage(message.sender.imageUrl ??
-                            'assets/images/black-widow.jpg'),
-                      ),
+                padding: EdgeInsets.all(10),
+                margin: EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: isMe ? Theme.of(context).primaryColor : Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
                     ),
                   ],
-                )
-              : Container(
-                  child: null,
-                ), */
-            ],
-          )
-        : Column(
-            children: <Widget>[
-              Container(
-                alignment: Alignment.topLeft,
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.80,
-                  ),
-                  padding: EdgeInsets.all(10),
-                  margin: EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    //mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.body,
-                        style: TextStyle(
-                          color: Colors.black54,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 2,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        //crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            formatTime(message.created_at),
-                            style: TextStyle(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-              /* !isSameUser
-              ? Row(
-                  children: <Widget>[
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundImage:
-                            AssetImage('assets/images/black-widow.jpg'),
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.body,
+                      style: TextStyle(
+                          color: isMe ? Colors.white : Colors.black54),
                     ),
                     SizedBox(
-                      width: 10,
+                      height: 2,
                     ),
-                    Text(
-                      formatDate(message.created_at),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black45,
-                      ),
+                    Row(
+                      mainAxisAlignment: isMe
+                          ? MainAxisAlignment.spaceBetween
+                          : MainAxisAlignment.end,
+                      //crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        isMe ? statusIcon(message) : Container(),
+                        Text(
+                          formatTime(message.created_at),
+                          style: TextStyle(
+                            color: isMe ? Colors.blueGrey : Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                )
-              : Container(
-                  child: null,
                 ),
-         */
-            ],
-          );
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   _sendMessageArea() {
@@ -264,67 +206,67 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: Icon(Icons.send),
             iconSize: 25,
             color: Theme.of(context).primaryColor,
-            onPressed: loading == true || chat.id == 0
+            onPressed:
+                /* loading == true || chat.id == 0
                 ? null
-                : () async {
-                    //print(controller!.text);
-                    if (controller!.text.isNotEmpty) {
-                      var m = Message(
-                        read: false,
-                        delivered: false,
-                        id: 0,
-                        body: controller!.text,
-                        chat: chat,
-                        created_at: DateTime.now(),
-                        dummy: true,
-                        sender: currentUser!,
-                        uid: Uuid().v4(),
-                      );
-                      var c = currentUser?.chats?.firstWhere(
-                          (c) => c?.id == chat.id,
-                          orElse: () => null as Chat);
+                :  */
+                () async {
+              //print(controller!.text);
+              if (controller!.text.isNotEmpty) {
+                var m = Message(
+                  read: false,
+                  delivered: false,
+                  id: 0,
+                  body: controller!.text,
+                  chat: chat,
+                  created_at: DateTime.now(),
+                  dummy: true,
+                  sender: currentUser!,
+                  uid: Uuid().v4(),
+                );
+                var c = currentUser?.chats?.firstWhere((c) => c?.id == chat.id,
+                    orElse: () => null as Chat);
 
-                      currentUser?.chats?.removeWhere((c) => c?.id == chat.id);
-                      c?.messages = List.from(c.messages as List<Message>)
-                        ..add(m);
-                      currentUser?.chats =
-                          List.from(currentUser?.chats as List<Chat>)..add(c);
-                      provider.setCurrentUser(currentUser!, save: false);
+                currentUser?.chats?.removeWhere((c) => c?.id == chat.id);
+                c?.messages = List.from(c.messages as List<Message>)..add(m);
+                currentUser?.chats = List.from(currentUser?.chats as List<Chat>)
+                  ..add(c);
+                provider.setCurrentUser(currentUser!, save: true);
 
-                      controller!.text = "";
+                controller!.text = "";
 
-                      loading = true;
-                      setState(() {});
-                      //if (user != null) {
-                      Message? message = await ChatRepository.saveMessage(
-                          user!.id, m, provider);
+                loading = true;
+                setState(() {});
+                //if (user != null) {
+                Message? message =
+                    await ChatRepository.saveMessage(user!.id, m, provider);
 
-                      loading = false;
-                      setState(() {});
+                loading = false;
+                setState(() {});
 
-                      if (message != null) {
-                        chat.messages
-                            ?.removeWhere((value) => value?.uid == message.uid);
-                        chat.messages?.add(message);
-                        player.play('message_sent.wav', volume: 0.5);
-                        //p.release();
-                      }
-                      // }
+                if (message != null) {
+                  chat.messages
+                      ?.removeWhere((value) => value?.uid == message.uid);
+                  chat.messages?.add(message);
+                  player.play('message_sent.wav', volume: 0.5);
+                  //p.release();
+                }
+                // }
 
-                      //User u = currentUser!;
+                //User u = currentUser!;
 
-                      /* currentUser?.chats
+                /* currentUser?.chats
                     ?.firstWhere((c) => c?.id == chat.id)!
                     .messages.sort(a,b) */
 
-                      //print(m.uid);
+                //print(m.uid);
 
-                      // return print(jsonEncode(User.fromJson(
-                      //     jsonDecode(pref.getString('currentUser') as String))));
-                      //return print(jsonEncode(currentUser));
+                // return print(jsonEncode(User.fromJson(
+                //     jsonDecode(pref.getString('currentUser') as String))));
+                //return print(jsonEncode(currentUser));
 
-                    }
-                  },
+              }
+            },
           ),
         ],
       ),
@@ -351,12 +293,14 @@ class _ChatScreenState extends State<ChatScreen> {
       /* globalEcho!
           .private('chat.${widget.chat.id.toString()}')
           .whisper('typing', () {}); */
-      ChatRepository.getMessages(widget.chat, provider)?.then((chat) {
-        if (chat != null) {
-          widget.chat = chat;
-          //setState(() {});
-        }
-      });
+      if (widget.chat.id != 0) {
+        ChatRepository.getMessages(widget.chat, provider)?.then((chat) {
+          if (chat != null) {
+            widget.chat = chat;
+            //setState(() {});
+          }
+        });
+      }
     });
 
     //print(channel.options);
@@ -390,7 +334,9 @@ class _ChatScreenState extends State<ChatScreen> {
   resend() {
     //if (!mounted) return;
     //print("test");
-    resendDummy(widget.chat, provider).then((chat) => widget.chat == chat);
+    if (widget.chat.id != 0) {
+      resendDummy(widget.chat, provider).then((chat) => widget.chat == chat);
+    }
   }
 
   Future<User> getUser() async {
@@ -429,66 +375,114 @@ class _ChatScreenState extends State<ChatScreen> {
                 brightness: Brightness.dark,
                 centerTitle: false,
                 title: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CachedNetworkImage(
-                      imageUrl: "${AppConfig.RAW_BASE_URL}/${user!.imageUrl}",
-                      imageBuilder: (context, imageProvider) => SizedBox(
-                        height: 35,
-                        width: 35,
-                        child: CircleAvatar(
-                            radius: 35,
-                            backgroundImage:
-                                imageProvider /* AssetImage(
+                    pressedMessages.isNotEmpty
+                        ? Container(
+                            child: Text(pressedMessages.length.toString()),
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                                CachedNetworkImage(
+                                  imageUrl:
+                                      "${AppConfig.RAW_BASE_URL}/${user!.imageUrl}",
+                                  imageBuilder: (context, imageProvider) =>
+                                      SizedBox(
+                                    height: 35,
+                                    width: 35,
+                                    child: CircleAvatar(
+                                        radius: 35,
+                                        backgroundImage:
+                                            imageProvider /* AssetImage(
                                                         chatUser!.imageUrl
                                                             as String)*/
-                            ),
-                      ),
-                      placeholder: (context, url) => loader(scale: 0.5),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    RichText(
-                      textAlign: TextAlign.start,
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                              text: limitString(
-                                  getUserName(pref!, user?.phone_number ?? ''),
-                                  20),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              )),
-                          TextSpan(text: '\n'),
-                          widget.chat.typing == true
-                              ? TextSpan(
-                                  text: 'Typing...',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
+                                        ),
                                   ),
-                                )
-                              : checkOnline(user!) ?? false
-                                  ? TextSpan(
-                                      text: 'Online',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    )
-                                  : TextSpan(
-                                      text: 'Offline',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    )
-                        ],
-                      ),
-                    ),
+                                  placeholder: (context, url) =>
+                                      loader(scale: 0.5),
+                                  errorWidget: (context, url, error) =>
+                                      Icon(Icons.error),
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                RichText(
+                                  textAlign: TextAlign.start,
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                          text: limitString(
+                                              getUserName(pref!,
+                                                  user?.phone_number ?? ''),
+                                              20),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w400,
+                                          )),
+                                      TextSpan(text: '\n'),
+                                      widget.chat.typing == true
+                                          ? TextSpan(
+                                              text: 'Typing...',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            )
+                                          : checkOnline(user!) ?? false
+                                              ? TextSpan(
+                                                  text: 'Online',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                )
+                                              : TextSpan(
+                                                  text: 'Offline',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                )
+                                    ],
+                                  ),
+                                ),
+                              ]),
+                    pressedMessages.isEmpty
+                        ? Container()
+                        : Row(
+                            children: [
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(Icons.reply),
+                                color: Colors.white,
+                              ),
+                              deleting.isNotEmpty
+                                  ? loader(scale: 0.4, color: Colors.white)
+                                  : IconButton(
+                                      onPressed: () async {
+                                        var ids = pressedMessages
+                                            .map((m) => m.uid)
+                                            .toSet()
+                                            .toList();
+                                        deleting.addAll(ids);
+                                        setState(() {});
+                                        await ChatRepository.deleteMessages(
+                                            widget.chat, ids, provider);
+                                        deleting = [];
+                                        pressedMessages = [];
+                                        if (mounted) {
+                                          Slidable.of(context)?.close();
+                                          setState(() {});
+                                        }
+                                      },
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                      )),
+                            ],
+                          )
                   ],
                 ),
                 /* leading: IconButton(
@@ -544,7 +538,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Expanded(
                             child: ListView.builder(
                               reverse: true,
-                              padding: EdgeInsets.all(20),
+                              //padding: EdgeInsets.all(20),
                               itemCount: messages.length,
                               itemBuilder: (BuildContext context, int index) {
                                 //print(formatDate(prevDate));
@@ -576,31 +570,60 @@ class _ChatScreenState extends State<ChatScreen> {
                                 //setState(() {});
 
                                 return Column(
+                                  //mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    lastMessage.uid == message.uid
-                                        // ||
-                                        //         !isSameDate(lastMessage.created_at,
-                                        //             message.created_at)
-                                        //lastMessage.created_at != message.created_at
-                                        //||firstMessage?.uid == message.uid
-                                        ? Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 5),
-                                            margin: EdgeInsets.symmetric(
-                                                vertical: 10),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .primaryColor,
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            ),
-                                            child: Text(
-                                                chatDate(message.created_at),
-                                                style: TextStyle(
-                                                    color: Colors.white)),
-                                          )
-                                        : Container(),
-                                    _chatBubble(message, isMe, isSameUser),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        lastMessage.uid == message.uid
+                                            // ||
+                                            //         !isSameDate(lastMessage.created_at,
+                                            //             message.created_at)
+                                            //lastMessage.created_at != message.created_at
+                                            //||firstMessage?.uid == message.uid
+                                            ? Container(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 5),
+                                                margin: EdgeInsets.symmetric(
+                                                    vertical: 10),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                child: Text(
+                                                    chatDate(
+                                                        message.created_at),
+                                                    style: TextStyle(
+                                                        color: Colors.white)),
+                                              )
+                                            : Container(),
+                                      ],
+                                    ),
+                                    Container(
+                                      margin: EdgeInsets.symmetric(
+                                          vertical: isSameUser ? 1 : 10),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 3),
+                                      color: !pressedMessages.contains(message)
+                                          ? Colors.transparent
+                                          : primaryColor.withAlpha(50),
+                                      child: Row(
+                                        /* crossAxisAlignment:
+                                            CrossAxisAlignment.start, */
+                                        mainAxisAlignment: !isMe
+                                            ? MainAxisAlignment.start
+                                            : MainAxisAlignment.end,
+                                        children: [
+                                          _chatBubble(
+                                              message, isMe, isSameUser),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 );
                               },
