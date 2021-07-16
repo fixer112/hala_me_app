@@ -109,7 +109,9 @@ class _ChatScreenState extends State<ChatScreen> {
       ],
       child: InkWell(
         onLongPress: () {
-          pressedMessages.add(message);
+          pressedMessages.contains(message)
+              ? pressedMessages.removeWhere((msg) => message.uid == msg.uid)
+              : pressedMessages.add(message);
           setState(() {});
         },
         onTap: () {

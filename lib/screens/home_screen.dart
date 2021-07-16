@@ -455,7 +455,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ],
                                 child: InkWell(
                                   onLongPress: () {
-                                    pressedChats.add(chat);
+                                    pressedChats.contains(chat)
+                                        ? pressedChats
+                                            .removeWhere((c) => chat == c)
+                                        : pressedChats.add(chat);
                                     setState(() {});
                                   },
                                   onTap: () {
