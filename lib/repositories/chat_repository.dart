@@ -141,6 +141,7 @@ class ChatRepository {
             //user?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
           }
         });
+
         user?.chats?.removeWhere((chat) => c.id == chat?.id);
         user?.chats = List.from(user.chats as List<Chat>)..add(c);
         var un = c.messages
@@ -197,17 +198,25 @@ class ChatRepository {
       print(res.statusCode);
       //print(res.body);
       if (res.statusCode == 200) {
+        user?.chats
+            ?.firstWhere((c) => c?.id == chat.id, orElse: null)
+            ?.messages
+            ?.removeWhere((m) => ids.contains(m?.uid));
+
+        provider.setCurrentUser(user!);
+
         getMessages(chat, provider);
       }
     }
   }
 
-  static deleteChat(int id, UserProvider provider) async {
+  static deleteChat(Chat chat, UserProvider provider) async {
     User? user = await provider.currentUser();
+    var u = chat.users?.firstWhere((e) => e?.id != user?.id);
 
     if (user?.access_token != null) {
       var res = await http.delete(
-          Uri.parse("${AppConfig.BASE_URL}/chat/delete/${id.toString()}"),
+          Uri.parse("${AppConfig.BASE_URL}/chat/delete/${u?.id.toString()}"),
           headers: {
             'Accept': 'application/json',
             'Authorization': 'Bearer ${user?.access_token}',
@@ -216,6 +225,10 @@ class ChatRepository {
       print(res.statusCode);
       //print(res.body);
       if (res.statusCode == 200) {
+        user?.chats
+            ?.firstWhere((c) => c?.id == chat.id, orElse: null)
+            ?.messages = [];
+        provider.setCurrentUser(user!);
         UserRepository.fetchUser(provider);
       }
     }

@@ -302,11 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     .toList();
                                 setState(() {});
                                 pressedChats.forEach((c) async {
-                                  var u = c.users
-                                      ?.firstWhere((e) => e?.id != user?.id);
-                                  print(u!.id);
-                                  await ChatRepository.deleteChat(
-                                      u.id, provider);
+                                  await ChatRepository.deleteChat(c, provider);
                                 });
                                 pressedChats = [];
                                 deleting = [];
@@ -427,18 +423,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   deleting.contains(chat!.id)
                                       ? loader(scale: 0.4)
                                       : IconButton(
-                                          onPressed: deleting.contains(chat!.id)
+                                          onPressed: deleting.contains(chat.id)
                                               ? null
                                               : () async {
-                                                  var u = chat.users
-                                                      ?.firstWhere((e) =>
-                                                          e?.id !=
-                                                          currentUser?.id);
-                                                  deleting.add(chat!.id);
+                                                  deleting.add(chat.id);
                                                   setState(() {});
                                                   await ChatRepository
                                                       .deleteChat(
-                                                          u!.id, provider);
+                                                          chat, provider);
 
                                                   deleting.removeWhere(
                                                       (id) => id == chat.id);

@@ -85,27 +85,25 @@ class _ChatScreenState extends State<ChatScreen> {
       secondaryActions: [
         deleting.contains(message.uid)
             ? loader(scale: 0.4)
-            : !isMe
-                ? Container()
-                : IconButton(
-                    onPressed: deleting.contains(message.uid)
-                        ? null
-                        : () async {
-                            deleting.add(message.uid);
-                            setState(() {});
-                            await ChatRepository.deleteMessages(
-                                widget.chat, [message.uid], provider);
+            : IconButton(
+                onPressed: deleting.contains(message.uid)
+                    ? null
+                    : () async {
+                        deleting.add(message.uid);
+                        setState(() {});
+                        await ChatRepository.deleteMessages(
+                            widget.chat, [message.uid], provider);
 
-                            deleting.removeWhere((id) => id == message.uid);
-                            if (mounted) {
-                              Slidable.of(context)?.close();
-                              setState(() {});
-                            }
-                          },
-                    icon: Icon(
-                      Icons.delete,
-                      color: primaryColor,
-                    ))
+                        deleting.removeWhere((id) => id == message.uid);
+                        if (mounted) {
+                          Slidable.of(context)?.close();
+                          setState(() {});
+                        }
+                      },
+                icon: Icon(
+                  Icons.delete,
+                  color: primaryColor,
+                ))
       ],
       child: InkWell(
         onLongPress: () {
