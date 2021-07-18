@@ -89,14 +89,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await ChatRepository.saveMessage(userId, m, provider);
         await ChatRepository.getMessages(chat, provider);
         //processInputTextReceived(receivedNotification);
-        return;
+        return null;
       } else if (!StringUtils.isNullOrEmpty(
               receivedNotification.buttonKeyPressed) &&
           receivedNotification.buttonKeyPressed == 'READ') {
         await ChatRepository.getMessages(chat, provider);
-        return;
+        return null;
       } else {
-        Get.to(ChatScreen(chat: chat));
+        if (StringUtils.isNullOrEmpty(receivedNotification.buttonKeyInput) ||
+            StringUtils.isNullOrEmpty(receivedNotification.buttonKeyPressed)) {
+          Get.to(ChatScreen(chat: chat));
+        }
       }
       //else {
       //print('work');
@@ -404,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 : primaryColor.withAlpha(50),
                             child: Slidable(
                                 actionPane: SlidableDrawerActionPane(),
-                                actionExtentRatio: 0.1,
+                                actionExtentRatio: 0.2,
                                 //showAllActionsThreshold: 0.1,
                                 //dismissal: SlidableDismissal(),
                                 actions: [

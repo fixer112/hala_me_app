@@ -132,10 +132,9 @@ class UserRepository {
 
         if (con == null) {
           c?.messages?.add(m);
-          currentUser.chats?.removeWhere((chat) => m.chat.id == chat?.id);
-          currentUser.chats = List.from(currentUser.chats as List<Chat>)
-            ..add(c);
         }
+        currentUser.chats?.removeWhere((chat) => m.chat.id == chat?.id);
+        currentUser.chats = List.from(currentUser.chats as List<Chat>)..add(c);
       });
     }
 
