@@ -90,11 +90,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     ? null
                     : () async {
                         deleting.add(message.uid);
+
                         setState(() {});
                         await ChatRepository.deleteMessages(
                             widget.chat, [message.uid], provider);
 
                         deleting.removeWhere((id) => id == message.uid);
+                        
                         if (mounted) {
                           Slidable.of(context)?.close();
                           setState(() {});

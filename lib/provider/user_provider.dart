@@ -78,7 +78,7 @@ class UserProvider extends GetxController {
     //_currentUser.refresh();
     update();
 
-    if (save == true) {
+    //if (save == true) {
       getPref().then((pref) {
         try {
           var u = jsonEncode(user);
@@ -86,7 +86,7 @@ class UserProvider extends GetxController {
           pref.setString('currentUser', u);
         } catch (e) {}
       });
-    }
+    //}
 
     //notifyListeners();
     //await pref.reload();
