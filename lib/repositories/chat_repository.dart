@@ -142,6 +142,10 @@ class ChatRepository {
           }
         });
 
+        c.messages?.forEach((m) {
+          m?.read = true;
+        });
+
         user?.chats?.removeWhere((chat) => c.id == chat?.id);
         user?.chats = List.from(user.chats as List<Chat>)..add(c);
         var un = c.messages
