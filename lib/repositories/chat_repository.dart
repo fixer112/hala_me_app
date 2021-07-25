@@ -141,10 +141,11 @@ class ChatRepository {
             //user?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
           }
         });
-
-        c.messages?.forEach((m) {
-          m?.read = true;
-        });
+        if (read == 1) {
+          c.messages?.forEach((m) {
+            m?.read = true;
+          });
+        }
 
         user?.chats?.removeWhere((chat) => c.id == chat?.id);
         user?.chats = List.from(user.chats as List<Chat>)..add(c);
