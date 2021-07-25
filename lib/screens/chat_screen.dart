@@ -96,7 +96,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             widget.chat, [message.uid], provider);
 
                         deleting.removeWhere((id) => id == message.uid);
-                        
+
                         if (mounted) {
                           Slidable.of(context)?.close();
                           setState(() {});
@@ -277,13 +277,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
+    widget.chat.messages?.forEach((m) {
+      m?.read = true;
+    });
     currentChatPage = widget.chat.id;
     print(currentChatPage);
 
     //print(globalEcho?.connector);
     whisperType();
     getPref().then((value) => pref = value);
-    getUser().then((value) {
+    getUser().then((value) async {
       /* globalEcho
           ?.private('chat.${widget.chat.id.toString()}')
           .whisper('typing', {
@@ -298,11 +301,20 @@ class _ChatScreenState extends State<ChatScreen> {
       if (widget.chat.id != 0) {
         ChatRepository.getMessages(widget.chat, provider)?.then((chat) {
           if (chat != null) {
+            chat.messages?.forEach((m) {
+              m?.read = true;
+            });
             widget.chat = chat;
+
             //setState(() {});
           }
         });
       }
+
+      var cu = await provider.currentUser();
+      cu?.chats?.removeWhere((chat) => widget.chat.id == chat?.id);
+      cu?.chats = List.from(cu.chats as List<Chat>)..add(widget.chat);
+      provider.setCurrentUser(cu!);
     });
 
     //print(channel.options);
