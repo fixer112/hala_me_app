@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await ChatRepository.getMessages(chat, provider);
         return null;
       } else {
-        if (StringUtils.isNullOrEmpty(receivedNotification.buttonKeyInput) ||
+        if (StringUtils.isNullOrEmpty(receivedNotification.buttonKeyInput) &&
             StringUtils.isNullOrEmpty(receivedNotification.buttonKeyPressed)) {
           Get.to(ChatScreen(chat: chat));
         }
@@ -252,7 +252,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     //     builder: (provider) {
 
     return WillPopScope(
-      onWillPop: () async => false,
+      onWillPop: () async {
+        if (pressedChats.isNotEmpty) {
+          pressedChats = [];
+          setState(() {});
+        }
+        return false;
+      },
       child: Scaffold(
         floatingActionButton: GestureDetector(
           onTap: () {
@@ -406,48 +412,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ? Colors.transparent
                                 : primaryColor.withAlpha(50),
                             child: Slidable(
-                                actionPane: SlidableDrawerActionPane(),
-                                actionExtentRatio: 0.2,
+
+                                //actionPane: SlidableDrawerActionPane(),
+                                //actionExtentRatio: 0.2,
                                 //showAllActionsThreshold: 0.1,
                                 //dismissal: SlidableDismissal(),
-                                actions: [
-                                  /* IconButton(
-                                      onPressed: () {
-                                        if (mounted) {
-                                          Slidable.of(context)?.close();
-                                        }
-                                      },
-                                      icon: Icon(
-                                        Icons.reply,
-                                        color: primaryColor,
-                                      )) */
-                                ],
-                                secondaryActions: [
-                                  deleting.contains(chat!.id)
-                                      ? loader(scale: 0.4)
-                                      : IconButton(
-                                          onPressed: deleting.contains(chat.id)
-                                              ? null
-                                              : () async {
-                                                  deleting.add(chat.id);
-                                                  setState(() {});
-                                                  await ChatRepository
-                                                      .deleteChat(
-                                                          chat, provider);
+                                /* startActionPane: ActionPane(
+                                  motion: ScrollMotion(),
+                                  extentRatio: 0.2,
+                                  children: [],
+                                ), */
+                                endActionPane: ActionPane(
+                                    motion: ScrollMotion(),
+                                    extentRatio: 0.2,
+                                    openThreshold: 0.3,
+                                    //closeThreshold: 0.1,
+                                    children: [
+                                      deleting.contains(chat!.id)
+                                          ? loader(scale: 0.4)
+                                          : IconButton(
+                                              onPressed: deleting
+                                                      .contains(chat.id)
+                                                  ? null
+                                                  : () async {
+                                                      deleting.add(chat.id);
+                                                      setState(() {});
+                                                      await ChatRepository
+                                                          .deleteChat(
+                                                              chat, provider);
 
-                                                  deleting.removeWhere(
-                                                      (id) => id == chat.id);
-                                                  if (mounted) {
-                                                    Slidable.of(context)
-                                                        ?.close();
-                                                    setState(() {});
-                                                  }
-                                                },
-                                          icon: Icon(
-                                            Icons.delete,
-                                            color: primaryColor,
-                                          ))
-                                ],
+                                                      deleting.removeWhere(
+                                                          (id) =>
+                                                              id == chat.id);
+                                                      if (mounted) {
+                                                        Slidable.of(context)
+                                                            ?.close();
+                                                        setState(() {});
+                                                      }
+                                                    },
+                                              icon: Icon(
+                                                Icons.delete,
+                                                color: primaryColor,
+                                              ))
+                                    ]),
                                 child: InkWell(
                                   onLongPress: () {
                                     pressedChats.contains(chat)

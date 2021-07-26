@@ -636,3 +636,32 @@ messageCreatedAlert(Map<String, dynamic> message) async {
     provider.update();
   }
 }
+
+snackbar(String title, String message, {duration = 2}) {
+  Get.snackbar(
+    '',
+    '',
+    titleText: title == ''
+        ? Container()
+        : Text(title, style: TextStyle(color: Colors.white)),
+    messageText: Center(
+        child: Column(
+      children: [
+        Text(
+          message,
+          style: TextStyle(color: Colors.white),
+        ),
+        SizedBox(
+          height: 5,
+        )
+      ],
+    )),
+    colorText: Colors.white,
+    backgroundColor: primaryColor,
+    //snackPosition: SnackPosition.BOTTOM,
+    borderRadius: 5,
+    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    padding: EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+    duration: Duration(seconds: duration),
+  );
+}

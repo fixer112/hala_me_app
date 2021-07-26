@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:hala_me/config.dart';
@@ -19,6 +20,7 @@ import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/screens/home_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:provider/provider.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:laravel_echo/src/channel/private-channel.dart';
@@ -61,52 +63,84 @@ class _ChatScreenState extends State<ChatScreen> {
 
   List<Message> pressedMessages = [];
 
+  Message? repling;
+
+  AutoScrollController? scrollController;
+  //final _slidableKey = GlobalKey();
+
+  Map<int, int> indexes = {};
+
+  bool scrollUpdating = false;
+
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
-    //print(message.delivered);
+    var repliedMessage = widget.chat.messages?.firstWhere(
+        (msg) => msg?.id == message.replied_id,
+        orElse: () => null as Message);
+    //print(message.replied_id);
     return /* isMe
         ?  */
         Slidable(
-      actionPane: SlidableDrawerActionPane(),
-      actionExtentRatio: 0.1,
+      key: ValueKey(message.uid),
+
+      //actionPane: SlidableDrawerActionPane(),
+      //actionExtentRatio: 0.1,
       //showAllActionsThreshold: 0.1,
       //dismissal: SlidableDismissal(),
-      actions: [
-        IconButton(
-            onPressed: () {
-              if (mounted) {
-                Slidable.of(context)?.close();
-              }
-            },
-            icon: Icon(
-              Icons.reply,
-              color: primaryColor,
-            ))
-      ],
-      secondaryActions: [
-        deleting.contains(message.uid)
-            ? loader(scale: 0.4)
-            : IconButton(
-                onPressed: deleting.contains(message.uid)
-                    ? null
-                    : () async {
-                        deleting.add(message.uid);
+      startActionPane: ActionPane(
+        motion: ScrollMotion(),
+        extentRatio: 0.2,
+        openThreshold: 0.3,
+        //closeThreshold: 0.4,
 
-                        setState(() {});
-                        await ChatRepository.deleteMessages(
-                            widget.chat, [message.uid], provider);
+        children: message.dummy == true
+            ? []
+            : [
+                IconButton(
+                    onPressed: () {
+                      repling = message;
+                      //if (mounted) {
+                      setState(() {});
 
-                        deleting.removeWhere((id) => id == message.uid);
+                      Slidable.of(context)?.close();
+                      //}
+                    },
+                    icon: Icon(
+                      Icons.reply,
+                      color: primaryColor,
+                    ))
+              ],
+      ),
+      endActionPane: ActionPane(
+        motion: ScrollMotion(),
+        extentRatio: 0.2,
+        openThreshold: 0.3,
+        //closeThreshold: 0.4,
+        children: [
+          deleting.contains(message.uid)
+              ? loader(scale: 0.4)
+              : IconButton(
+                  onPressed: deleting.contains(message.uid)
+                      ? null
+                      : () async {
+                          deleting.add(message.uid);
 
-                        if (mounted) {
-                          Slidable.of(context)?.close();
                           setState(() {});
-                        }
-                      },
-                icon: Icon(
-                  Icons.delete,
-                  color: primaryColor,
-                ))
-      ],
+                          await ChatRepository.deleteMessages(
+                              widget.chat, [message.uid], provider);
+
+                          deleting.removeWhere((id) => id == message.uid);
+
+                          if (mounted) {
+                            Slidable.of(context)?.close();
+                            setState(() {});
+                          }
+                        },
+                  icon: Icon(
+                    Icons.delete,
+                    color: primaryColor,
+                  ))
+        ],
+      ),
       child: InkWell(
         onLongPress: () {
           pressedMessages.contains(message)
@@ -137,37 +171,95 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: BoxDecoration(
                   color: isMe ? Theme.of(context).primaryColor : Colors.white,
                   borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
+                  /* boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
+                      spreadRadius: 1,
+                      blurRadius: 1,
                     ),
-                  ],
+                  ], */
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      message.body,
-                      style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black54),
-                    ),
-                    SizedBox(
-                      height: 2,
-                    ),
-                    Row(
-                      mainAxisAlignment: isMe
-                          ? MainAxisAlignment.spaceBetween
-                          : MainAxisAlignment.end,
-                      //crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        isMe ? statusIcon(message) : Container(),
-                        Text(
-                          formatTime(message.created_at),
-                          style: TextStyle(
-                            color: isMe ? Colors.blueGrey : Colors.grey,
+                    repliedMessage == null
+                        ? Container()
+                        : GestureDetector(
+                            onTap: () {
+                              print(repliedMessage.id);
+                              if (indexes.containsKey(repliedMessage.id)) {
+                                print(indexes[repliedMessage.id]);
+                                scrollController?.scrollToIndex(
+                                    indexes[repliedMessage.id]!,
+                                    preferPosition: AutoScrollPosition.end);
+                                scrollController
+                                    ?.highlight(indexes[repliedMessage.id]!);
+                              }
+
+                              print('tap');
+                            },
+                            child: Container(
+                              width: Get.width,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              padding: EdgeInsets.all(5),
+                              margin: EdgeInsets.all(5),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    repliedMessage.sender.id == currentUser?.id
+                                        ? 'You'
+                                        : getUserName(pref!,
+                                            repliedMessage.sender.phone_number),
+                                    style: TextStyle(
+                                      color: repliedMessage.sender.id ==
+                                              currentUser?.id
+                                          ? primaryColor
+                                          : Colors.purple,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(repliedMessage.body,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      )),
+                                  SizedBox(
+                                    height: 5,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      //mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          message.body,
+                          style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black54),
+                        ),
+                        SizedBox(
+                          height: 1,
+                        ),
+                        Row(
+                          mainAxisAlignment: isMe
+                              ? MainAxisAlignment.spaceBetween
+                              : MainAxisAlignment.end,
+                          //crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            isMe ? statusIcon(message) : Container(),
+                            Text(
+                              formatTime(message.created_at),
+                              style: TextStyle(
+                                color: isMe ? Colors.blueGrey : Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -181,11 +273,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  _sendMessageArea() {
+  Widget _sendMessageArea() {
     var chat = widget.chat;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8),
-      height: 70,
+      height: 50,
       color: Colors.white,
       child: Row(
         children: <Widget>[
@@ -193,10 +285,14 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: Icon(Icons.photo),
             iconSize: 25,
             color: Theme.of(context).primaryColor,
-            onPressed: () {},
+            onPressed: () {
+              snackbar('', 'Coming soon');
+            },
           ),
           Expanded(
             child: TextField(
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
               controller: controller,
               decoration: InputDecoration.collapsed(
                 hintText: 'Send a message..',
@@ -225,6 +321,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   dummy: true,
                   sender: currentUser!,
                   uid: Uuid().v4(),
+                  replied_id: repling == null ? null : repling?.id,
                 );
                 var c = currentUser?.chats?.firstWhere((c) => c?.id == chat.id,
                     orElse: () => null as Chat);
@@ -236,6 +333,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 provider.setCurrentUser(currentUser!, save: true);
 
                 controller!.text = "";
+                repling = null;
+                scrollController?.animateTo(0.0,
+                    curve: Curves.easeOut,
+                    duration: Duration(milliseconds: 300));
 
                 loading = true;
                 setState(() {});
@@ -277,9 +378,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    widget.chat.messages?.forEach((m) {
-      m?.read = true;
-    });
+    scrollController = AutoScrollController(
+      //add this for advanced viewport boundary. e.g. SafeArea
+      viewportBoundaryGetter: () =>
+          Rect.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom),
+
+      //choose vertical/horizontal
+      axis: Axis.vertical,
+
+      //this given value will bring the scroll offset to the nearest position in fixed row height case.
+      //for variable row height case, you can still set the average height, it will try to get to the relatively closer offset
+      //and then start searching.
+      //suggestedRowHeight: 200,
+    );
+    scrollController?.addListener(() {});
     currentChatPage = widget.chat.id;
     print(currentChatPage);
 
@@ -301,9 +413,10 @@ class _ChatScreenState extends State<ChatScreen> {
       if (widget.chat.id != 0) {
         ChatRepository.getMessages(widget.chat, provider)?.then((chat) {
           if (chat != null) {
-            chat.messages?.forEach((m) {
+            /* chat.messages?.forEach((m) {
+
               m?.read = true;
-            });
+            }); */
             widget.chat = chat;
 
             //setState(() {});
@@ -311,10 +424,10 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
 
-      var cu = await provider.currentUser();
+      /* var cu = await provider.currentUser();
       cu?.chats?.removeWhere((chat) => widget.chat.id == chat?.id);
       cu?.chats = List.from(cu.chats as List<Chat>)..add(widget.chat);
-      provider.setCurrentUser(cu!);
+      provider.setCurrentUser(cu!); */
     });
 
     //print(channel.options);
@@ -332,6 +445,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     timer?.cancel();
     t1?.cancel();
+    scrollController?.dispose();
     super.dispose();
   }
 
@@ -378,12 +492,44 @@ class _ChatScreenState extends State<ChatScreen> {
         ? loader()
         : WillPopScope(
             onWillPop: () async {
+              if (pressedMessages.isNotEmpty) {
+                pressedMessages = [];
+                setState(() {});
+                return false;
+              }
               currentChatPage = 0;
               print(currentChatPage);
               Get.to(HomeScreen());
+
               return true;
             },
             child: Scaffold(
+              floatingActionButton: scrollUpdating == false
+                  ? Container()
+                  : Container(
+                      margin: EdgeInsets.only(bottom: 50),
+                      child: ClipOval(
+                        child: Material(
+                          color: Colors.white, // button color
+                          child: InkWell(
+                            splashColor:
+                                primaryColor.withOpacity(0.5), // inkwell color
+                            child: SizedBox(
+                                width: 35,
+                                height: 35,
+                                child: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: primaryColor,
+                                )),
+                            onTap: () {
+                              scrollController?.animateTo(0.0,
+                                  curve: Curves.easeOut,
+                                  duration: Duration(milliseconds: 300));
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
               backgroundColor: Color(0xFFF6F6F6),
               appBar: AppBar(
                 brightness: Brightness.dark,
@@ -468,8 +614,24 @@ class _ChatScreenState extends State<ChatScreen> {
                         : Row(
                             children: [
                               IconButton(
-                                onPressed: () {},
-                                icon: Icon(Icons.reply),
+                                onPressed: () {
+                                  var text = '';
+                                  pressedMessages.forEach((msg) {
+                                    text += "${msg.body} \t";
+                                  });
+                                  Clipboard.setData(
+                                          new ClipboardData(text: text))
+                                      .then((_) {
+                                    snackbar('', 'message(s) copied.',
+                                        duration: 2);
+                                  });
+                                  pressedMessages = [];
+                                  if (mounted) {
+                                    Slidable.of(context)?.close();
+                                    setState(() {});
+                                  }
+                                },
+                                icon: Icon(Icons.copy),
                                 color: Colors.white,
                               ),
                               deleting.isNotEmpty
@@ -550,100 +712,225 @@ class _ChatScreenState extends State<ChatScreen> {
                       return Column(
                         children: <Widget>[
                           Expanded(
-                            child: ListView.builder(
-                              reverse: true,
-                              //padding: EdgeInsets.all(20),
-                              itemCount: messages.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                //print(formatDate(prevDate));
-                                messages.sort((a, b) =>
-                                    b.created_at.compareTo(a.created_at));
-                                Message? lastMessage = messages.lastWhere(
-                                    (message) => isSameDate(
-                                        message.created_at, prevDate!));
+                            child: NotificationListener<ScrollEndNotification>(
+                              onNotification: (notify) {
+                                var metrics = notify.metrics;
+                                /* if (notify is ScrollStartNotification) {
+                                  scrollUpdating = true;
+                                  setState(() {});
 
-                                //print(lastMessage.uid);
-                                // Message? lastMessage = messages.lastWhere(
-                                //     (message) =>
-                                //         isSameDate(message.created_at, prevDate),
-                                //     orElse: () => null as Message);
-                                final Message message = messages[index];
-                                // print(
-                                //     "last:${lastMessage?.uid} message:${message?.uid}");
-                                final bool isMe =
-                                    message.sender.id == currentUser?.id;
-                                final bool isSameUser =
-                                    prevUserId == message.sender.id;
-                                //print("$prevUserId : ${message.sender.id}");
-                                prevUserId = message.sender.id;
-                                //setState(() {});
-                                // bool sameDate =
-                                //     isSameDate(prevDate, message.created_at);
-                                prevDate = message.created_at;
+                                  //_onStartScroll(scrollNotification.metrics);
+                                } else if (notify is ScrollUpdateNotification) {
+                                  scrollUpdating = true;
+                                  setState(() {});
+                                  //_onUpdateScroll(scrollNotification.metrics);
+                                } else if (notify is ScrollEndNotification) {
+                                  scrollUpdating = false;
+                                  setState(() {});
+                                  //_onEndScroll(scrollNotification.metrics);
+                                } */
+                                //print(scrollUpdating);
 
-                                //setState(() {});
+                                if (metrics.hasPixels) {
+                                  if (metrics.pixels == 0) {
+                                    print('At bottom');
+                                    scrollUpdating = false;
+                                  } else {
+                                    print('At top');
+                                    scrollUpdating = true;
+                                  }
+                                  print(metrics.pixels);
+                                  print(scrollUpdating);
+                                  setState(() {});
+                                }
 
-                                return Column(
-                                  //mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                return true;
+                              },
+                              child: ListView.builder(
+                                controller: scrollController,
+                                reverse: true,
+                                //padding: EdgeInsets.all(20),
+                                itemCount: messages.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  //print(formatDate(prevDate));
+                                  messages.sort((a, b) =>
+                                      b.created_at.compareTo(a.created_at));
+                                  Message? lastMessage = messages.lastWhere(
+                                      (message) => isSameDate(
+                                          message.created_at, prevDate!));
+
+                                  //print(lastMessage.uid);
+                                  // Message? lastMessage = messages.lastWhere(
+                                  //     (message) =>
+                                  //         isSameDate(message.created_at, prevDate),
+                                  //     orElse: () => null as Message);
+                                  final Message message = messages[index];
+                                  indexes[message.id] = index;
+                                  // print(
+                                  //     "last:${lastMessage?.uid} message:${message?.uid}");
+                                  final bool isMe =
+                                      message.sender.id == currentUser?.id;
+                                  final bool isSameUser =
+                                      prevUserId == message.sender.id;
+                                  //print("$prevUserId : ${message.sender.id}");
+                                  prevUserId = message.sender.id;
+                                  //setState(() {});
+                                  // bool sameDate =
+                                  //     isSameDate(prevDate, message.created_at);
+                                  prevDate = message.created_at;
+
+                                  //setState(() {});
+
+                                  return AutoScrollTag(
+                                    controller: scrollController!,
+                                    index: index,
+                                    key: ValueKey(index),
+                                    child: Column(
+                                      //mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        lastMessage.uid == message.uid
-                                            // ||
-                                            //         !isSameDate(lastMessage.created_at,
-                                            //             message.created_at)
-                                            //lastMessage.created_at != message.created_at
-                                            //||firstMessage?.uid == message.uid
-                                            ? Container(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 5),
-                                                margin: EdgeInsets.symmetric(
-                                                    vertical: 10),
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
-                                                ),
-                                                child: Text(
-                                                    chatDate(
-                                                        message.created_at),
-                                                    style: TextStyle(
-                                                        color: Colors.white)),
-                                              )
-                                            : Container(),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            lastMessage.uid == message.uid
+                                                // ||
+                                                //         !isSameDate(lastMessage.created_at,
+                                                //             message.created_at)
+                                                //lastMessage.created_at != message.created_at
+                                                //||firstMessage?.uid == message.uid
+                                                ? Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 10,
+                                                            vertical: 5),
+                                                    margin:
+                                                        EdgeInsets.symmetric(
+                                                            vertical: 10),
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5),
+                                                    ),
+                                                    child: Text(
+                                                        chatDate(
+                                                            message.created_at),
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white)),
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
+                                        Container(
+                                          margin: EdgeInsets.symmetric(
+                                              vertical: isSameUser ? 1 : 10),
+                                          padding:
+                                              EdgeInsets.symmetric(vertical: 3),
+                                          color:
+                                              !pressedMessages.contains(message)
+                                                  ? Colors.transparent
+                                                  : primaryColor.withAlpha(50),
+                                          child: Row(
+                                            /* crossAxisAlignment:
+                                                CrossAxisAlignment.start, */
+                                            mainAxisAlignment: !isMe
+                                                ? MainAxisAlignment.start
+                                                : MainAxisAlignment.end,
+                                            children: [
+                                              _chatBubble(
+                                                  message, isMe, isSameUser),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                     ),
-                                    Container(
-                                      margin: EdgeInsets.symmetric(
-                                          vertical: isSameUser ? 1 : 10),
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 3),
-                                      color: !pressedMessages.contains(message)
-                                          ? Colors.transparent
-                                          : primaryColor.withAlpha(50),
-                                      child: Row(
-                                        /* crossAxisAlignment:
-                                            CrossAxisAlignment.start, */
-                                        mainAxisAlignment: !isMe
-                                            ? MainAxisAlignment.start
-                                            : MainAxisAlignment.end,
-                                        children: [
-                                          _chatBubble(
-                                              message, isMe, isSameUser),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                          _sendMessageArea(),
+                          Column(
+                            children: [
+                              repling == null
+                                  ? Container()
+                                  : Container(
+                                      margin: EdgeInsets.only(top: 10),
+                                      width: Get.width,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(15),
+                                            topRight: Radius.circular(15)),
+                                      ),
+                                      height: 80,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: primaryColor.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                        ),
+                                        padding: EdgeInsets.all(20),
+                                        margin: EdgeInsets.only(
+                                            left: 15, right: 15, top: 5),
+                                        //padding: ,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  repling?.sender.id ==
+                                                          currentUser?.id
+                                                      ? 'You'
+                                                      : getUserName(
+                                                          pref!,
+                                                          repling!.sender
+                                                              .phone_number),
+                                                  style: TextStyle(
+                                                    color: repling?.sender.id ==
+                                                            currentUser?.id
+                                                        ? primaryColor
+                                                        : Colors.purple,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  limitString(
+                                                      repling!.body, 30),
+                                                  style:
+                                                      TextStyle(fontSize: 10),
+                                                ),
+                                              ],
+                                            ),
+                                            IconButton(
+                                                onPressed: () {
+                                                  repling = null;
+                                                  setState(() {});
+                                                },
+                                                icon: Icon(
+                                                  Icons.cancel_outlined,
+                                                  size: 15,
+                                                  color: primaryColor,
+                                                )),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                              _sendMessageArea(),
+                            ],
+                          ),
                         ],
                       );
                       //}),

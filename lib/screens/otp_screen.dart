@@ -128,7 +128,7 @@ class _OTPScreenState extends State<OTPScreen> {
                       //print(widget.number);
                       //print(text);
                       if (text.length != 4) {
-                        return Get.snackbar("", 'OTP should be 4 digits');
+                        return snackbar("", 'OTP should be 4 digits');
                       }
                       loading = true;
                       setState(() {});

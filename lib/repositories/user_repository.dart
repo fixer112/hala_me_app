@@ -45,10 +45,7 @@ class UserRepository {
     //print((res));
     //print(jsonDecode(res.body));
     if (![200, 201].contains(res.statusCode)) {
-      return Get.snackbar(
-          "",
-          /* "Invalid number. Start with 234 and 13 digit." */ jsonDecode(
-              res.body)['message']);
+      return snackbar("", jsonDecode(res.body)['message'], duration: 5);
     }
     if (res.body == 'otp sent') {
       Get.off(OTPScreen(number));

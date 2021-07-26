@@ -43,6 +43,13 @@ class ChatRepository {
     //await Provider.of<UserProvider>(context, listen: false).currentUser();
     //}
     if (user?.access_token != null) {
+      var data = {
+        'body': message.body,
+        'uid': message.uid,
+      };
+      if (message.replied_id != null) {
+        data['replied_id'] = message.replied_id.toString();
+      }
       var res = await http.post(
           Uri.parse("${AppConfig.BASE_URL}/messages/create/$id"),
           headers: {
@@ -50,10 +57,7 @@ class ChatRepository {
             'Authorization': 'Bearer ${user?.access_token}',
             //'X-Socket-ID': currentSocketId,
           },
-          body: {
-            'body': message.body,
-            'uid': message.uid,
-          });
+          body: data);
       print(res.statusCode);
       ////print(res.body);
 
@@ -143,7 +147,9 @@ class ChatRepository {
         });
         if (read == 1) {
           c.messages?.forEach((m) {
-            m?.read = true;
+            if (m?.sender.id != user?.id) {
+              m?.read = true;
+            }
           });
         }
 
