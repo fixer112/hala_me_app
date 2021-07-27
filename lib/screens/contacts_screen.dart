@@ -7,6 +7,7 @@ import 'package:hala_me/global.dart';
 import 'package:hala_me/models/chat_model.dart';
 import 'package:hala_me/models/user_model.dart';
 import 'package:hala_me/provider/user_provider.dart';
+import 'package:hala_me/repositories/chat_repository.dart';
 import 'package:hala_me/screens/chat_screen.dart';
 import 'package:hala_me/values.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -116,56 +117,92 @@ class _ContactsState extends State<Contacts> {
 
                 return currentUser == null
                     ? Container()
-                    : Container(
-                        child: ListView.builder(
-                            itemCount: numbers.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 5.0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    var id = int.parse(
-                                        data[numbers[index]].toString());
-                                    Chat? chat = currentUser?.chats?.firstWhere(
-                                        (chat) => chat?.users
-                                            ?.where((u) => u?.id == id)
-                                            .isNotEmpty as bool,
-                                        orElse: () => null);
-                                    //print(chat?.id);
-                                    if (chat == null) {
-                                      chat = Chat(
-                                        id: 0,
-                                        created_at: DateTime.now(),
-                                        users: [
-                                          currentUser,
-                                          User(
-                                            id: id,
-                                            online: false,
-                                            created_at: DateTime.now(),
-                                            updated_at: DateTime.now(),
-                                            phone_number: numbers[index],
+                    : Stack(
+                        children: [
+                          Container(
+                            child: ListView.builder(
+                                itemCount: numbers.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 5.0),
+                                    child: GestureDetector(
+                                      onTap: loading
+                                          ? null
+                                          : () async {
+                                              var id = int.parse(
+                                                  data[numbers[index]]
+                                                      .toString());
+                                              Chat? chat = currentUser?.chats
+                                                  ?.firstWhere(
+                                                      (chat) => chat?.users
+                                                          ?.where((u) =>
+                                                              u?.id == id)
+                                                          .isNotEmpty as bool,
+                                                      orElse: () => null);
+                                              //print(chat?.id);
+                                              if (chat == null) {
+                                                chat = Chat(
+                                                  id: 0,
+                                                  created_at: DateTime.now(),
+                                                  users: [
+                                                    currentUser,
+                                                    User(
+                                                      id: id,
+                                                      online: false,
+                                                      created_at:
+                                                          DateTime.now(),
+                                                      updated_at:
+                                                          DateTime.now(),
+                                                      phone_number:
+                                                          numbers[index],
+                                                    ),
+                                                  ],
+                                                  messages: [],
+                                                );
+                                              }
+
+                                              //print(chat.users);
+                                              if (chat.id == 0) {
+                                                loading = true;
+                                                setState(() {});
+                                                chat = await ChatRepository
+                                                    .getMessages(
+                                                        chat, provider);
+                                                loading = false;
+                                                if (mounted) {
+                                                  setState(() {});
+                                                }
+                                                if (chat != null) {
+                                                  Get.to(
+                                                      ChatScreen(chat: chat));
+                                                } else {
+                                                  snackbar('',
+                                                      'unable to load chat.');
+                                                }
+                                              } else {
+                                                Get.to(ChatScreen(chat: chat));
+                                              }
+                                            },
+                                      child: Card(
+                                        color: loading
+                                            ? Colors.grey
+                                            : Colors.white,
+                                        child: ListTile(
+                                          title: Text(
+                                            getUserName(p!, numbers[index]),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        ],
-                                        messages: [],
-                                      );
-                                    }
-                                    //print(chat.users);
-                                    Get.to(ChatScreen(chat: chat));
-                                  },
-                                  child: Card(
-                                    child: ListTile(
-                                      title: Text(
-                                        getUserName(p!, numbers[index]),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                          subtitle: Text(numbers[index]),
                                         ),
                                       ),
-                                      subtitle: Text(numbers[index]),
                                     ),
-                                  ),
-                                ),
-                              );
-                            }),
+                                  );
+                                }),
+                          ),
+                          //loading == true ? loader() : Container(),
+                        ],
                       );
               });
         }),
