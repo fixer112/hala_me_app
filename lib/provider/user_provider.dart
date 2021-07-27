@@ -78,15 +78,15 @@ class UserProvider extends GetxController {
     //_currentUser.refresh();
     update();
 
-    //if (save == true) {
-    getPref().then((pref) {
-      //try {
-      var u = jsonEncode(user);
-      pref.remove('currentUser');
-      pref.setString('currentUser', u);
-      //} catch (e) {}
-    });
-    //}
+    if (save == true) {
+      getPref().then((pref) {
+        try {
+          var u = jsonEncode(user);
+          pref.remove('currentUser');
+          pref.setString('currentUser', u);
+        } catch (e) {}
+      });
+    }
 
     //notifyListeners();
     //await pref.reload();

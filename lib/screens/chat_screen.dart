@@ -323,14 +323,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   uid: Uuid().v4(),
                   replied_id: repling == null ? null : repling?.id,
                 );
-                var c = currentUser?.chats?.firstWhere((c) => c?.id == chat.id,
-                    orElse: () => null as Chat);
+                var c = chat.id == 0
+                    ? chat
+                    : currentUser?.chats?.firstWhere((c) => c?.id == chat.id,
+                        orElse: () => null as Chat);
+                //return print(c?.id);
 
-                currentUser?.chats?.removeWhere((c) => c?.id == chat.id);
-                c?.messages = List.from(c.messages as List<Message>)..add(m);
-                currentUser?.chats = List.from(currentUser?.chats as List<Chat>)
-                  ..add(c);
-                provider.setCurrentUser(currentUser!, save: true);
+                c?.messages?..add(m);
+                //return print(c?.messages?[0]?.body);
+                if (c?.id != 0) {
+                  currentUser?.chats?.removeWhere((c) => c?.id == chat.id);
+                  currentUser?.chats?..add(c);
+                  provider.setCurrentUser(currentUser!);
+                }
+                //return print(currentUser);
 
                 controller!.text = "";
                 repling = null;
@@ -341,6 +347,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 loading = true;
                 setState(() {});
                 //if (user != null) {
+                //return;
                 Message? message =
                     await ChatRepository.saveMessage(user!.id, m, provider);
 
@@ -351,6 +358,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   chat.messages
                       ?.removeWhere((value) => value?.uid == message.uid);
                   chat.messages?.add(message);
+                  widget.chat = chat;
                   player.play('message_sent.wav', volume: 0.5);
                   //p.release();
                 }

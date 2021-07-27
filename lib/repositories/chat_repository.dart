@@ -70,15 +70,18 @@ class ChatRepository {
         Message m = Message.fromJson(map);
         Chat? chat = user?.chats?.firstWhere((chat) => chat?.id == m.chat.id,
             orElse: () => null as Chat);
-        chat?.messages?.removeWhere((message) => message?.uid == m.uid);
-        chat?.messages = List.from(chat.messages as List<Message>)..add(m);
+        if (chat == null) {
+          await getMessages(m.chat, provider);
+        } else {
+          chat.messages?.removeWhere((message) => message?.uid == m.uid);
+          chat.messages = List.from(chat.messages as List<Message>)..add(m);
 
-        user?.chats?.removeWhere((chat) => chat?.id == m.chat.id);
-        user?.chats = List.from(user.chats as List<Chat>)..add(chat);
+          user?.chats?.removeWhere((chat) => chat?.id == m.chat.id);
+          user?.chats = List.from(user.chats as List<Chat>)..add(chat);
 
-        provider.setCurrentUser(user!);
-        //context.read<UserProvider>().setCurrentUser(user!, save: true);
-
+          provider.setCurrentUser(user!);
+          //context.read<UserProvider>().setCurrentUser(user!, save: true);
+        }
         return m;
       }
       /* if (res.statusCode == 422) {
@@ -132,28 +135,30 @@ class ChatRepository {
         //print(c.messages?.first?.body);
         Chat? chat = user?.chats?.firstWhere((chat) => chat?.id == c.id,
             orElse: () => null as Chat);
+        if (chat != null) {
+          var msgs = chat
+              .messages; //?.where((message) => message?.dummy == true).toList();
+          msgs?.removeWhere((m) => m?.chat.id != chat.id);
+          msgs?.forEach((m) {
+            var con = c.messages?.firstWhere(
+                (message) => m?.uid == message?.uid,
+                orElse: () => null as Message);
 
-        var msgs = chat
-            ?.messages; //?.where((message) => message?.dummy == true).toList();
-        msgs?.removeWhere((m) => m?.chat.id != chat?.id);
-        msgs?.forEach((m) {
-          var con = c.messages?.firstWhere((message) => m?.uid == message?.uid,
-              orElse: () => null as Message);
-
-          if (con == null) {
-            c.messages?.add(m);
-            //user?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
-          }
-        });
-        if (read == 1) {
-          c.messages?.forEach((m) {
-            if (m?.sender.id != user?.id) {
-              m?.read = true;
+            if (con == null) {
+              c.messages?.add(m);
+              //user?.chats?.removeWhere((chat) => m?.chat.id == chat?.id);
             }
           });
+          if (read == 1) {
+            c.messages?.forEach((m) {
+              if (m?.sender.id != user?.id) {
+                m?.read = true;
+              }
+            });
+          }
+          user?.chats?.removeWhere((chat) => c.id == chat?.id);
         }
 
-        user?.chats?.removeWhere((chat) => c.id == chat?.id);
         user?.chats = List.from(user.chats as List<Chat>)..add(c);
         var un = c.messages
             ?.where(
