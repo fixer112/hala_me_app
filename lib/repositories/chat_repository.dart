@@ -135,7 +135,7 @@ class ChatRepository {
 
         var msgs = chat
             ?.messages; //?.where((message) => message?.dummy == true).toList();
-
+        msgs?.removeWhere((m) => m?.chat.id != chat?.id);
         msgs?.forEach((m) {
           var con = c.messages?.firstWhere((message) => m?.uid == message?.uid,
               orElse: () => null as Message);
