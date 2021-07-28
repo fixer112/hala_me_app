@@ -73,9 +73,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool scrollUpdating = false;
 
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
-    var repliedMessage = widget.chat.messages?.firstWhere(
-        (msg) => msg?.id == message.replied?.id,
-        orElse: () => null as Message);
+    var repliedMessage = message.replied;
     //print(message.replied_id);
     return /* isMe
         ?  */
