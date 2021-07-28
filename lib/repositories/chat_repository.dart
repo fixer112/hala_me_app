@@ -47,8 +47,8 @@ class ChatRepository {
         'body': message.body,
         'uid': message.uid,
       };
-      if (message.replied_id != null) {
-        data['replied_id'] = message.replied_id.toString();
+      if (message.replied != null) {
+        data['replied_id'] = message.replied!.id.toString();
       }
       var res = await http.post(
           Uri.parse("${AppConfig.BASE_URL}/messages/create/$id"),

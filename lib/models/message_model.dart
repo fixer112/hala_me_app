@@ -20,7 +20,7 @@ class Message {
   bool encrypted;
   bool alerted;
   bool hidden;
-  int? replied_id;
+  Message? replied;
 
   Message({
     required this.read,
@@ -35,7 +35,7 @@ class Message {
     this.encrypted = true,
     this.alerted = false,
     this.hidden = false,
-    this.replied_id,
+    this.replied,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) =>

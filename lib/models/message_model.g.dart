@@ -20,9 +20,9 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
     encrypted: json['encrypted'].toString() == '1' ? true : false,
     alerted: json['alerted'].toString() == '1' ? true : false,
     hidden: json['hidden'].toString() == '1' ? true : false,
-    replied_id: json['replied_id'] == null
+    replied: json['replied'] == null
         ? null
-        : int.parse(json['replied_id'].toString()),
+        : Message.fromJson(json['replied'] as Map<String, dynamic>),
   );
 }
 
@@ -39,5 +39,5 @@ Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
       'encrypted': instance.encrypted,
       'alerted': instance.alerted,
       'hidden': instance.hidden,
-      'replied_id': instance.replied_id,
+      'replied': instance.replied,
     };

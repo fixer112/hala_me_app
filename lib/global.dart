@@ -59,9 +59,15 @@ String lastChatPeriod(DateTime date) {
 }
 
 String chatDate(DateTime date) {
-  return date.isAfter(DateTime.now().subtract(Duration(days: 1)))
+  DateTime now = DateTime.now();
+  var diff = DateTime(date.year, date.month, date.day)
+      .difference(DateTime(now.year, now.month, now.day))
+      .inDays;
+  return /* date.isAfter(DateTime.now().subtract(Duration(days: 1))) */ diff ==
+          0
       ? 'Today'
-      : date.isAfter(DateTime.now().subtract(Duration(days: 2)))
+      : /* date.isAfter(DateTime.now().subtract(Duration(days: 2))) */ diff ==
+              -1
           ? 'Yesterday'
           : DateFormat('EE, d MMM, yyyy').format(date);
 }

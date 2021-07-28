@@ -74,7 +74,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _chatBubble(Message message, bool isMe, bool isSameUser) {
     var repliedMessage = widget.chat.messages?.firstWhere(
-        (msg) => msg?.id == message.replied_id,
+        (msg) => msg?.id == message.replied?.id,
         orElse: () => null as Message);
     //print(message.replied_id);
     return /* isMe
@@ -186,7 +186,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ? Container()
                         : GestureDetector(
                             onTap: () {
-                              print(repliedMessage.id);
+                              //print(repliedMessage.id);
                               if (indexes.containsKey(repliedMessage.id)) {
                                 print(indexes[repliedMessage.id]);
                                 scrollController?.scrollToIndex(
@@ -201,7 +201,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: Container(
                               width: Get.width,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: isMe
+                                    ? Colors.white.withOpacity(0.2)
+                                    : primaryColor.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               padding: EdgeInsets.all(5),
@@ -222,9 +224,13 @@ class _ChatScreenState extends State<ChatScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                                  SizedBox(
+                                    height: 5,
+                                  ),
                                   Text(repliedMessage.body,
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color:
+                                            isMe ? Colors.white : primaryColor,
                                       )),
                                   SizedBox(
                                     height: 5,
@@ -321,7 +327,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   dummy: true,
                   sender: currentUser!,
                   uid: Uuid().v4(),
-                  replied_id: repling == null ? null : repling?.id,
+                  replied: repling == null ? null : repling,
                 );
                 var c = chat.id == 0
                     ? chat
