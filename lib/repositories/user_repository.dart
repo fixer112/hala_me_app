@@ -121,7 +121,7 @@ class UserRepository {
       });
 
       msgs.forEach((m) {
-        var c = currentUser.chats?.firstWhere((chat) => m?.chat.id == chat?.id,
+        var c = currentUser.chats?.firstWhere((chat) => m.chat.id == chat?.id,
             orElse: () => null as Chat);
 
         var con = c?.messages?.firstWhere((message) => m?.uid == message?.uid,
@@ -130,6 +130,7 @@ class UserRepository {
         if (con == null) {
           c?.messages?.add(m);
         }
+
         currentUser.chats?.removeWhere((chat) => m.chat.id == chat?.id);
         currentUser.chats = List.from(currentUser.chats as List<Chat>)..add(c);
       });
